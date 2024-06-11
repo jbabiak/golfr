@@ -1,0 +1,148 @@
+.scorecard {
+  margin: 10px 0;
+  border-collapse: collapse;
+}
+
+.scorecard th, .scorecard td {
+  border: 1px solid #ddd;
+  text-align: center;
+  position: relative; /* Needed for absolute positioning of shapes */
+}
+
+/* Class for normal score */
+/* Ensure square cells for specific columns */
+.scorecard td:nth-child(n+2):nth-child(-n+21) { /* Columns 12 to 20 */
+  width: 40px; /* or any size that suits your design */
+  height: 40px; /* make height equal to width for square shape */
+  padding: 0; /* Adjust padding as needed */
+  box-sizing: border-box;
+}
+
+/* Class for birdie */
+.scorecard .birdie::after {
+  content: ' ';
+  position: absolute;
+  z-index: -1; /* Ensure shape is behind text */
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid green;
+  transform: translate(-50%, -50%);
+}
+
+/* Class for bogey */
+.scorecard .bogey::after {
+  content: ' ';
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  border: 1px solid red;
+  transform: translate(-50%, -50%);
+}
+
+/* Class for eagle */
+.scorecard .eagle::after {
+  content: ' ';
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid green;
+  transform: translate(-50%, -50%);
+}
+.scorecard .eagle::before {
+  content: ' ';
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid green;
+  transform: translate(-50%, -50%);
+}
+
+/* Class for double-bogey */
+.scorecard .double-bogey::after {
+  content: ' ';
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  width: 34px; /* Adjust for better visibility */
+  height: 34px;
+  border: 1px solid red; /* Thicker border for emphasis */
+  transform: translate(-50%, -50%);
+}
+.scorecard .double-bogey::before {
+  content: ' ';
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  width: 24px; /* Inner square smaller */
+  height: 24px;
+  border: 1px solid red;
+  transform: translate(-50%, -50%);
+}
+
+.scorecard th, .scorecard td {
+  border: 1px solid #ddd;
+  text-align: center;
+  position: relative;
+}
+
+/* Ensure square cells for specific columns */
+.scorecard td:nth-child(n+2):nth-child(-n+10), /* Columns 2 to 10 */
+.scorecard td:nth-child(n+12):nth-child(-n+20) { /* Columns 12 to 20 */
+  width: 40px; /* or any size that suits your design */
+  height: 40px; /* make height equal to width for square shape */
+  padding: 0; /* Adjust padding as needed */
+  box-sizing: border-box;
+}
+
+/* Top row, first and last column, and specific columns styling */
+.scorecard th,
+.scorecard td:nth-child(1),
+.scorecard td:nth-child(11),
+.scorecard td:nth-child(21),
+.scorecard td:last-child {
+  font-weight: bold;
+  color: #e3fc02; /* Yellow color */
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 767px) {
+  /* Ensure square cells for specific columns */
+  .scorecard td:nth-child(n+2):nth-child(-n+10), /* Columns 2 to 10 */
+  .scorecard td:nth-child(n+12):nth-child(-n+20) { /* Columns 12 to 20 */
+    width: unset; /* or any size that suits your design */
+    height: unset; /* make height equal to width for square shape */
+    padding: 4px 10px;
+    box-sizing: border-box;
+  }
+  .scorecard-container {
+    overflow-x: auto; /* Enables horizontal scrolling */
+  }
+  .scorecard .birdie::after,
+  .scorecard .bogey::after,
+  .scorecard .eagle::before,
+  .scorecard .double-bogey::before {
+    width: 20px; /* Smaller size for mobile */
+    height: 20px;
+  }
+  .scorecard .double-bogey::after,
+  .scorecard .eagle::after {
+    width: 25px; /* Smaller size for mobile */
+    height: 25px;
+  }
+}

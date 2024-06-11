@@ -1,0 +1,12 @@
+name: 'miniOrange OAuth/OIDC Client'
+type: module
+package: OAuth / OpenID Connect
+core_version_requirement: ^9.3 || ^10
+description: 'This module allows you to login in your Drupal site using any OAuth2 or OpenID compliant server.'
+configure: miniorange_oauth_client.config_clc
+# project: miniOrange
+
+# Information added by Drupal.org packaging script on 2023-11-06
+version: '4.0.8'
+project: 'miniorange_oauth_client'
+datestamp: 1699270648

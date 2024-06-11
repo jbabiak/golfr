@@ -1,0 +1,46 @@
+/*  Swing
+
+      <div class="sk-swing">
+        <div class="sk-swing-dot"></div>
+        <div class="sk-swing-dot"></div>
+      </div>
+ */
+.ajax-throbber.sk-swing {
+  width: var(--sk-size);
+  height: var(--sk-size);
+  position: relative;
+  animation: sk-swing 1.8s infinite linear;
+}
+
+.ajax-throbber .sk-swing-dot {
+  width: 45%;
+  height: 45%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+  background-color: var(--sk-color);
+  border-radius: 100%;
+  animation: sk-swing-dot 2s infinite ease-in-out;
+}
+
+.ajax-throbber .sk-swing-dot:nth-child(2) {
+  top: auto;
+  bottom: 0;
+  animation-delay: -1s;
+}
+
+@keyframes sk-swing {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes sk-swing-dot {
+  0%, 100% {
+    transform: scale(0.2); }
+  50% {
+    transform: scale(1);
+  }
+}

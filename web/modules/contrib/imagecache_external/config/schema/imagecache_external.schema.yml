@@ -1,0 +1,64 @@
+# Schema for the configuration files of the Imagecache External module.
+
+imagecache_external.settings:
+  type: config_object
+  label: 'Imagecache External settings'
+  mapping:
+    imagecache_directory:
+      type: string
+      label: 'Imagecache directory'
+    imagecache_subdirectories:
+      type: boolean
+      label: 'Imagecache create subdirectories'
+    imagecache_default_extension:
+      type: string
+      label: 'Imagecache default file extension'
+    imagecache_external_batch_flush_limit:
+      type: integer
+      label: 'Imagecache batch file limit'
+    imagecache_external_hosts:
+      type: string
+      label: 'Imagecache allowed hosts'
+    imagecache_external_management:
+      type: string
+      label: 'Imagecache file management'
+    imagecache_external_use_whitelist:
+      type: boolean
+      label: 'Imagecache use whitelist'
+    imagecache_fallback_image:
+      type: integer
+      label: 'Imagecache fallback image'
+      sequence:
+        type: string
+        label: 'Imagecache fallback image id'
+    imagecache_external_allowed_mimetypes:
+      type: sequence
+      label: 'Imagecache allowed mimetypes'
+      sequence:
+        type: string
+        label: 'Mimetype'
+    imagecache_external_cron_flush_frequency:
+      type: integer
+      label: 'Imagecache cron flush threshold'
+
+field.formatter.settings.imagecache_external_image:
+  type: mapping
+  label: 'Imagecache external image formatter settings'
+  mapping:
+    imagecache_external_link:
+      type: string
+      label: 'Imagecache link'
+    imagecache_external_style:
+      type: string
+      label: 'Imagecache style'
+
+field.formatter.settings.imagecache_external_responsive_image:
+  type: mapping
+  label: 'Imagecache external responsive image formatter settings'
+  mapping:
+    imagecache_external_link:
+      type: string
+      label: 'Imagecache link'
+    imagecache_external_responsive_style:
+      type: string
+      label: 'Imagecache responsive style'

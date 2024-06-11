@@ -1,0 +1,79 @@
+/* VARIABLES */
+
+// colors
+$primary-shade: #1f1f21;
+$primary-light: tint-color($primary-shade, 37%);
+$primary-dark: shade-color($primary-shade, 12%);
+//$accent-shade: #e3fc02;
+$accent-shade: #1a356a;
+$accent-light: tint-color($accent-shade, 37%);
+$accent-dark: shade-color($accent-shade, 12%);
+
+// Reassign color vars to semantic color scheme
+$red: #dc3545;
+$yellow: #e3fc02;
+$green: #28a745;
+$cyan: #17a2b8;
+$white: #fff;
+$gray-100: #f8f9fa;
+$gray-800: #343a40;
+// scss-docs-start theme-color-variables
+$primary:       $primary-shade;
+$secondary:     $accent-shade;
+$success:       $green;
+$info:          $cyan;
+$warning:       $yellow;
+$danger:        $red;
+$brand-primary: $accent-shade;
+$light:         $gray-100;
+$dark:          $gray-800;
+//$brand-success: $green;
+//$brand-info: $teal;
+//$brand-warning: $orange;
+//$brand-danger: $red;
+$brand-inverse: $primary-shade;
+// Body
+//
+// Settings for the `<body>` element.
+$body-bg: $primary-shade;
+$body-color: $white;
+$inverse-bg: $primary-shade;
+$inverse-color: $white;
+// Links
+//
+// Style anchor elements.
+$link-color: $yellow;
+$link-decoration: none;
+//$link-hover-color: $accent-dark;
+//$link-hover-decoration: underline;
+// Comments
+$comment-spacer-x: 1.25em;
+$comment-spacer-y: 1.25em;
+// Responsive font sizes
+$enable-responsive-font-sizes: true;
+$enable-shadows: false;
+$enable-gradients: false;
+// Breadcrumbs (Works only on Bootstrap 5+)
+// $breadcrumb-divider: quote(">");
+$enable-caret: true;
+
+
+//Buttons
+$border-radius: 0;
+$border-radius-sm: 0;
+$border-radius-lg: 0;
+$btn-border-radius:           $border-radius;
+$btn-border-radius-sm:        $border-radius-sm;
+$btn-border-radius-lg:        $border-radius-lg;
+
+
+//Tables
+$body-emphasis-color: $white;
+$body-emphasis-color-dark: $white;
+$table-color: $white;
+
+
+//progress bar
+
+$progress-height: 2rem;
+$progress-bg: $primary-light;

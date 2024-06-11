@@ -1,0 +1,5 @@
+services:
+  hacks_forms.route_subscriber:
+    class: Drupal\hacks_forms\Routing\HacksFormsRouteSubscriber
+    tags:
+      - { name: event_subscriber }

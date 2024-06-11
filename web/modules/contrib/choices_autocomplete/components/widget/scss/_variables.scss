@@ -1,0 +1,41 @@
+$choices-font-size: .889rem !default;
+$choices-line-height: 1.5rem !default;
+
+$choices-color: #232429 !default;
+$choices-muted-color: #75767b !default;
+
+$choices-border-width: .0625rem !default;
+$choices-border-color: #919297 !default;
+$choices-border-radius: .125rem !default;
+
+$choices-focus-border-width: .125rem !default;
+$choices-focus-border-color: $choices-color !default;
+$choices-focus-outline: 2px dotted transparent !default;
+$choices-focus-box-shadow: 0 0 0 2px #fff, 0 0 0 5px $choices-color !default;
+
+$choices-error-border-color: #dc2323 !default;
+
+$choices-divider-border-width: $choices-border-width !default;
+$choices-divider-border-color: #dedfe4 !default;
+
+$choices-spacer: 1rem !default;
+$choices-min-height: 3rem !default;
+
+$choices-item-min-height: $choices-min-height - $choices-spacer !default;
+$choices-item-spacer: .25rem !default;
+$choices-item-padding-y: .25rem !default;
+$choices-item-padding-x: .5rem !default;
+$choices-item-bg: #f3f4f9 !default;
+$choices-item-active-bg: #f5f8ff !default;
+
+$choices-spacer-t: (($choices-min-height - $choices-item-min-height) / 2) - $choices-border-width !default;
+$choices-spacer-b: ($choices-spacer-t / 2) - $choices-border-width !default;
+$choices-spacer-s: $choices-spacer - $choices-item-spacer !default;
+$choices-spacer-e: $choices-spacer !default;
+
+$choices-remove-button-width: .75rem !default;
+$choices-remove-button-height: $choices-remove-button-width !default;
+$choices-remove-button-bg: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjEiIGhlaWdodD0iMjEiIHZpZXdCb3g9IjAgMCAyMSAyMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSIjMDAwIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0yLjU5Mi4wNDRsMTguMzY0IDE4LjM2NC0yLjU0OCAyLjU0OEwuMDQ0IDIuNTkyeiIvPjxwYXRoIGQ9Ik0wIDE4LjM2NEwxOC4zNjQgMGwyLjU0OCAyLjU0OEwyLjU0OCAyMC45MTJ6Ii8+PC9nPjwvc3ZnPg==') !default;
+
+$choices-breakpoint: 37.5rem !default;
+$choices-dropdown-box-shadow: 0 5px 5px -1px rgba(0, 0, 0, .2) !default;

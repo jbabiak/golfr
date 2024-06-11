@@ -1,0 +1,14 @@
+ajax_loader.settings:
+  type: config_entity
+  label: 'AJAX Loader settings'
+  mapping:
+    throbber:
+      type: string
+    hide_ajax_message:
+      type: boolean
+    always_fullscreen:
+      type: boolean
+    show_admin_paths:
+      type: boolean
+    throbber_position:
+      type: string

@@ -1,0 +1,253 @@
+<?php
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\node\NodeInterface;
+use Drupal\Core\Datetime\DrupalDateTime;
+
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+/**
+ * Implements hook_form_FORM_ID_alter() for the user password reset form.
+ */
+function hacks_forms_form_user_pass_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  // Disable the form by setting #access to FALSE.
+  $form['#access'] = FALSE;
+}
+
+function hacks_forms_form_user_pass_reset_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  // Disable the form by setting #access to FALSE.
+  $form['#access'] = FALSE;
+}
+
+function hacks_forms_form_user_login_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  dpm($form, 'form');
+  dpm($form_state, 'formstate');
+  // Remove username field.
+  unset($form['name']);
+  $serializedString = serialize($form);
+  $string =  "<pre>" . print_r(unserialize($serializedString), 1) . "</pre>";
+  \Drupal::logger('hacks_form')->notice($string);
+
+  // Remove password field.
+  unset($form['pass']);
+  $form['actions']['submit']['#access'] = FALSE;
+  $form['oauth_loginurl']['#attributes']['class'][] = 'btn';
+  $form['oauth_loginurl']['#attributes']['class'][] = 'btn-warning';
+  $form['markup_custom_login_button']['#attributes']['class'][] = 'btn-warning';
+  $form['markup_custom_login_button']['#attributes']['class'][] = 'btn-warning';
+
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function hacks_forms_form_node_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id == 'node_men_s_night_form' || $form_id == 'node_men_s_night_edit_form' || $form_id == 'node_course_edit_form'|| $form_id == 'node_course_edit_form') {
+    $form['field_grint_course']['widget'][0]['value']['#autocomplete_route_name'] = 'hacks_forms.autocomplete_course';
+    $form['#attached']['library'][] = 'hacks_forms/autocomplete-listener-tee-color';
+  }
+}
+
+
+/**
+ * Implements hook_entity_insert().
+ */
+function hacks_forms_node_presave(NodeInterface $node) {
+  if ($node->bundle() == 'men_s_night') {
+    _hacks_forms_add_mens_night_round($node);
+  }
+  if ($node->bundle() == 'course') {
+    _hacks_forms_add_course($node);
+  }
+}
+
+
+function _hacks_forms_add_mens_night_round(NodeInterface $men_s_night) {
+  $recreate_checked = $men_s_night->get('field__re_create_season')->value;
+  if ($recreate_checked) {
+
+    $grintAPI = \Drupal::service('grint_api.grint_api_service');
+
+    // Check for existing referenced nodes in field_weekly_rounds and delete them goes deeper into scores and courses.
+    if (!$men_s_night->get('field_weekly_rounds')->isEmpty()) {
+      $referenced_rounds = $men_s_night->get('field_weekly_rounds')->referencedEntities();
+      foreach ($referenced_rounds as $referenced_round) {
+        $referenced_scores = $referenced_round->get('field_scores')->referencedEntities();
+        foreach ($referenced_scores as $referenced_score) {
+          $referenced_score->delete();
+        }
+        $referenced_courses = $referenced_round->get('field_course')->referencedEntities();
+        foreach ($referenced_courses as $referenced_course) {
+          $referenced_course->delete();
+        }
+        $referenced_round->delete();
+      }
+    }
+
+    $number_of_weeks = $men_s_night->get('field_number_of_weeks')->value;
+    $field_players = $men_s_night->get('field_players')->getValue();
+    $rounds_references = [];
+    $startDate = $men_s_night->get('field_start_date')->date->getTimestamp();
+    $weekday = $men_s_night->get('field_weekday')->value;
+    $next_round_cutoff_date = getNextWeekdayDate($startDate, $weekday);
+    $next_round_date = getNextWeekdayDate($startDate, $weekday);
+    $convertedToUtcTime = $next_round_cutoff_date->setTime(23, 59)->modify('+'.$men_s_night->get('field_score_cutoff_days')->value.' days');
+    $timezone = new DateTimeZone('UTC');
+    $convertedToUtcTime = $convertedToUtcTime->setTimezone($timezone);
+    for ($i = 1; $i <= $number_of_weeks; $i++) {
+      // Create a new men_s_night_round node.
+
+      //Round Node START
+      $round_node_title = 'Round ' . $i;
+      $round = Drupal\node\Entity\Node::create([
+        'type' => 'men_s_night_round',
+        // Add any default field values for the men_s_night_round content type.
+        'title' => $round_node_title,
+        'field_round_date' => $next_round_date->format('Y-m-d'),
+        'field_score_cutoff' => $convertedToUtcTime->format('Y-m-d\TH:i:s'),
+        'field_grint_course_mr' => $men_s_night->get('field_grint_course_mr')->value,
+        'field_grint_course_ms' => $men_s_night->get('field_grint_course_ms')->value,
+        'field_grint_course_lr' => $men_s_night->get('field_grint_course_lr')->value,
+        'field_grint_course_ls' => $men_s_night->get('field_grint_course_ls')->value,
+        'field_grint_course' => $men_s_night->get('field_grint_course')->value,
+        'field_grint_tee_color' => $men_s_night->get('field_grint_tee_color')->value,
+      ]);
+      // Set the path alias
+      $round_alias = strtolower('/leagues/'.str_replace(" ", "-", $men_s_night->label()).'/'.str_replace(" ", "-", $round_node_title));
+
+
+      $round->path = [
+        'alias' => $round_alias,
+        'pathauto' => 0,
+      ];
+      //Round Node END
+
+      //Course Node START
+
+      $course_node_title = $round_node_title . ' Course';
+      $course = Drupal\node\Entity\Node::create([
+        'type' => 'course',
+        'title' => $round_node_title . ' Course',
+        'field_auto_generate' => 1,
+        'field_grint_course' => $men_s_night->get('field_grint_course')->value,
+        'field_grint_tee_color' => $men_s_night->get('field_grint_tee_color')->value,
+      ]);
+      // Set the path alias
+      $course_alias = strtolower($round_alias.'/'.str_replace("'", "", str_replace(" ", "-", $course_node_title)));
+      $course->path = [
+        'alias' => $course_alias, // Replace with your desired path alias
+        'pathauto' => 0,
+      ];
+      $course->save();
+      //Course Node END
+
+      //Scores Node START
+      $scores_references = [];
+      foreach ($field_players as $player) {
+        $playerId = $player['target_id'];
+        $user = \Drupal\user\Entity\User::load($playerId);
+
+        $score_node_title = $user->get('field_name')->value . '\'s Scorecard';
+        $score = Drupal\node\Entity\Node::create([
+          'type' => 'men_s_night_score',
+          'title' => $score_node_title,
+          'field_round_date' => $next_round_date->format('Y-m-d'),
+          'field_player' => $playerId,
+          'field_handicap_index' => $user->get('field_handicap_index')->value,
+          'field_course_handicap' => $grintAPI->getCourseHandicap(
+            $user->get('field_grint_userid')->value,
+            $user->get('field_handicap_index')->value,
+            $grintAPI->getCourseIdFromString($men_s_night->get('field_grint_course')->value),
+            $men_s_night->get('field_grint_tee_color')->value,
+          ),
+        ]);
+        // Set the path alias
+        $score_alias = strtolower($round_alias.'/'.str_replace("'", "", str_replace(" ", "-", $score_node_title)));
+        $score->path = [
+          'alias' => $score_alias, // Replace with your desired path alias
+          'pathauto' => 0,
+        ];
+        $score->save();
+        $scores_references[] = ['target_id' => $score->id()];
+      }
+      //Scores node END
+
+      $round->set('field_scores', $scores_references);
+      $round->set('field_course', $course->id());
+      $round->save();
+
+      $rounds_references[] = ['target_id' => $round->id()];
+      $convertedToUtcTime->modify('+7 days');
+      $next_round_date->modify('+7 days');
+    }
+
+
+    // Add the reference to the men_s_night node.
+    $men_s_night->set('field_weekly_rounds', $rounds_references);
+    $men_s_night->set('field__re_create_season', 0);
+
+  }
+}
+
+function _hacks_forms_add_course(NodeInterface $course_node) {
+  $autogenerate = $course_node->get('field_auto_generate')->value;
+  if ($autogenerate) {
+    $grintAPI = \Drupal::service('grint_api.grint_api_service');
+    $field_course_name = $course_node->get('field_grint_course')->value;
+    $grint_course_id = $grintAPI->getCourseIdFromString($field_course_name);
+    $field_tee_color = $course_node->get('field_grint_tee_color')->value;
+
+    $all_tee_colors = $grintAPI->searchCourseTeeColors($grint_course_id);
+    foreach ($all_tee_colors as $tee_color) {
+      if ($field_tee_color == $tee_color['value']) {
+        $course_node->set('field_grint_course_mr', $tee_color['mr']);
+        $course_node->set('field_grint_course_ms', $tee_color['ms']);
+        $course_node->set('field_grint_course_ls', $tee_color['ls']);
+        $course_node->set('field_grint_course_lr', $tee_color['lr']);
+
+        $course_grint_data = $grintAPI->getCourseData($grint_course_id, $field_tee_color, 18);
+        $course_data = $grintAPI->processCourseData($course_grint_data);
+
+        $course_node->set('field_course_par_holes', $course_data['par']['hole_par']);
+        $course_node->set('field_course_par_front', $course_data['par']['front_par']);
+        $course_node->set('field_course_par_back', $course_data['par']['back_par']);
+        $course_node->set('field_course_par_total', $course_data['par']['total_par']);
+
+        $course_node->set('field_hole_yards', $course_data['yardage']['hole_yardage']);
+        $course_node->set('field_hole_yards_front', $course_data['yardage']['front_yardage']);
+        $course_node->set('field_hole_yards_back', $course_data['yardage']['back_yardage']);
+        $course_node->set('field_hole_yards_total', $course_data['yardage']['total_yardage']);
+
+        $course_node->set('field_course_index_holes', $course_data['handicap']['hole_handicap']);
+      }
+    }
+  }
+}
+
+function getNextWeekdayDate($startDate, $selectedWeekday)
+{
+  // Assuming $node is your node object
+  // Get the start date value
+  $timezone = new \DateTimeZone('America/New_York'); // Replace with your desired timezone
+  $startDateObject = DrupalDateTime::createFromTimestamp($startDate, $timezone);
+  // The DateTime::format('w') functn returns 0 (for Sunday) through 6 (for Saturday)
+  $currentWeekday = $startDateObject->format('w');
+  // Calculate the difference in days
+  $daysDifference = $selectedWeekday - $currentWeekday;
+  if ($daysDifference < 0) {
+    // If the selected day is before the current day in the week, move to the next week
+    $daysDifference += 7;
+  } elseif ($daysDifference === 0) {
+    // If the selected day is the same as the current day, move to the next occurrence of the day
+    $daysDifference = 7;
+  }
+
+  // Add the difference in days to the start date
+  $nextWeekdayDate = $startDateObject->modify("+$daysDifference days");
+  $nextWeekdayDate->setTime(23, 59);
+  return $nextWeekdayDate;
+}
+
+

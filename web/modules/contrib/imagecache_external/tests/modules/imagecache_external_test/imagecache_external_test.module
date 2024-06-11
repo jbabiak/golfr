@@ -1,0 +1,15 @@
+<?php
+
+/**
+ * @file
+ * Test module for Imagecache External.
+ */
+
+/**
+ * Implements hook_imagecache_external_destination_alter().
+ */
+function imagecache_external_test_imagecache_external_destination_alter(&$alter, $context) {
+  if (strpos($context['url'], 'wordmark') !== FALSE) {
+    $alter['directory'] = 'altered-directory';
+  }
+}

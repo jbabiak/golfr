@@ -1,0 +1,7 @@
+name: 'Hacks Blocks'
+type: module
+description: 'Provides custom blocks for Hacks.'
+core_version_requirement: ^9 || ^10
+package: Custom
+dependencies:
+  - node

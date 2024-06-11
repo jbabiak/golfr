@@ -1,0 +1,48 @@
+<div class="container-fluid">
+    <div class="row justify-content-center align-items-center">
+          <div class="col-md-12 col-lg-4 mt-3">
+                <div class="tachometer-container">
+                    <div id="tachometer" data-percentage="{{ percentage }}">
+                        <div class="ii">
+                            <div><b><span class="num_1">0</span></b></div>
+                            <div><b></b></div>
+                            <div><b><span class="num_2">2</span></b></div>
+                            <div><b></b></div>
+                            <div><b><span class="num_3">4</span></b></div>
+                            <div><b></b></div>
+                            <div><b><span class="num_4">5</span></b></div>
+                            <div><b></b></div>
+                            <div><b><span class="num_5">6</span></b></div>
+                            <div><b></b></div>
+                            <div><b><span class="num_6">7</span></b></div>
+                            <div><b></b></div>
+                            <div><b><span class="num_7">8</span></b></div>
+                            <div><b></b></div>
+                            <div><b><span class="num_8">9</span></b></div>
+                            <div><b></b></div>
+                            <div><b><span class="num_9">10</span></b></div>
+                        </div>
+                        <div id="redline"></div><div id="redline2"></div><div id="redline3"></div>
+                        <div id="yellowline"></div><div id="yellowline2"></div><div id="yellowline3"></div>
+                        <div id="greenline"></div>
+                        <div class="line" style="animation: revAndSettle 3s ease backwards;"><div class="emoji">💩</div></div>
+                        <div class="pin"><div class="inner"></div></div>
+                        <div class="label">BS Meter</div>
+                    </div>
+                </div>
+            </div>
+        <div class="col-md-12 col-lg-8 mt-3">
+
+            {% set probability = 1 / odds %}
+            {% set perc = probability * 100 %}
+            {% set rounded = perc|number_format(4) %}
+
+            <ul>
+              <li>The Odds of this round happening are <strong>{{ odds|number_format(0, '.', ',') }}:1</strong> or <strong>({{ rounded }}%)</strong></li>
+              <li><strong>{{handicapDifferential|number_format(2)}}</strong> = ({{grossScore}} – {{courseRating}}) * (113/{{courseSlope}}) - {{handicapIndex}}</li>
+              <li>Net Differential  = (Gross Score - Course Rating) * 113 / Course Slope - Handicap Index</small></li>
+              <li><a href="{{ linktoCourse }}">Link to Golf Course</a></li>
+           </ul>
+        </div>
+    </div>
+</div>

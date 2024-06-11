@@ -1,0 +1,31 @@
+hacks_forms.autocomplete_course:
+  path: '/hacks_forms/autocomplete_course'
+  defaults:
+    _controller: '\Drupal\hacks_forms\Controller\HacksFormsAutoCompleteCourseController::autocomplete'
+  requirements:
+    _permission: 'access content'
+
+
+hacks_forms.autocomplete_tee_color_options:
+  path: '/hacks_forms/tee_color/{selectedValue}'
+  defaults:
+    _controller: '\Drupal\hacks_forms\Controller\HacksFormsAutoCompleteTeeColorController::getSelectOptions'
+  requirements:
+    _permission: 'access content'
+
+
+hacks_forms.scorecard_enter_grint_form:
+  path: '/hacks-forms/scorecard-enter-grint/{scorecardID}/{UID}/{grintUID}'
+  defaults:
+    _form: '\Drupal\hacks_forms\Form\HacksScorecardEnterGrintForm'
+    _title: 'Enter Scorecard from TheGrint'
+  requirements:
+    _permission: 'access content'
+hacks_forms.scorecard_enter_manual_form:
+  path: '/hacks-forms/scorecard-enter-manual/{scorecardID}/{UID}/{grintRID}'
+  defaults:
+    _form: '\Drupal\hacks_forms\Form\HacksScorecardEnterManualForm'
+    _title: 'Enter Scorecard'
+    grintRID: NULL
+  requirements:
+    _permission: 'access content'

@@ -1,0 +1,19 @@
+scorecard:
+  version: 1.x
+  css:
+    theme:
+      css/scorecard.css: {}
+
+
+
+tachometer:
+  version: 1.0.31
+  css:
+    theme:
+      css/tachometer.css: {}
+  js:
+    js/tachometer.js: { type: 'file', attributes: { defer: true } }
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings

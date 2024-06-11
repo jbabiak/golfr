@@ -1,0 +1,12 @@
+type: module
+name: Imagecache External
+description: Allows you to fetch external images and use image styles on them.
+dependencies:
+  - drupal:image
+core_version_requirement: ^9.3 || ^10
+configure: imagecache_external.admin_settings
+
+# Information added by Drupal.org packaging script on 2022-10-16
+version: '3.0.1'
+project: 'imagecache_external'
+datestamp: 1665918250

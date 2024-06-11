@@ -1,0 +1,20 @@
+$choices-font-size: .875rem;
+$choices-line-height: 1.125rem;
+$choices-color: #0d1214;
+$choices-muted-color: #7e96a7;
+$choices-border-width: 0.0625rem;
+$choices-border-color: $choices-muted-color;
+$choices-border-radius: .1875rem;
+$choices-focus-border-color: #2494db;
+$choices-focus-box-shadow: 0 0 0 2px #fff, 0 0 0 5px #2494db !default;
+$choices-error-border-color: #e33f1e;
+$choices-divider-border-color: #e7edf1;
+$choices-spacer: 1.125rem;
+$choices-min-height: 3.375rem;
+$choices-item-padding-y: .5rem;
+$choices-item-padding-x: .65rem;
+$choices-item-bg: $choices-divider-border-color;
+$choices-item-active-bg: #f7f9fa;
+
+@import '../widget/scss/variables';
+@import '../widget/scss/base';

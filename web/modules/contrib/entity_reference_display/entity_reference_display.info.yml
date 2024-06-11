@@ -1,0 +1,12 @@
+name: Entity Reference Display
+type: module
+description: Defines a field type for display mode selection for entity reference fields.
+core_version_requirement: ^8 || ^9 || ^10
+package: Field types
+dependencies:
+  - drupal:options
+
+# Information added by Drupal.org packaging script on 2022-10-20
+version: '2.0.0'
+project: 'entity_reference_display'
+datestamp: 1666231003

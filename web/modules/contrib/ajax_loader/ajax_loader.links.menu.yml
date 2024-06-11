@@ -1,0 +1,5 @@
+ajax_loader.settings:
+  title: 'Ajax loader'
+  description: Settings for ajax loader.'
+  parent: system.admin_config_ui
+  route_name: ajax_loader.settings

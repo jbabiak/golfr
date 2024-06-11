@@ -1,0 +1,25 @@
+<?php
+
+/**
+ * @file
+ * Installation file for miniOrange OAuth Client Module.
+ */
+use Drupal\miniorange_oauth_client\feedback;
+use Drupal\miniorange_oauth_client\Utilities;
+
+/**
+ * hook_uninstall not needed.
+ * Configure variables are cleared when module is uninstalled.
+ **/
+ function miniorange_oauth_client_uninstall() {
+   $mo_config = \Drupal::configFactory()->getEditable('miniorange_oauth_client.settings');
+   $mo_config->clear('miniorange_oauth_client_attr_list_from_server')->save();
+ }
+
+
+/**
+ * Implements hook_install().
+ */
+function miniorange_oauth_client_install() {
+  drupal_flush_all_caches();
+}

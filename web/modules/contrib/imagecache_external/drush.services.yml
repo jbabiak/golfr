@@ -1,0 +1,5 @@
+services:
+  imagecache_external.commands:
+    class: \Drupal\imagecache_external\Commands\ImagecacheExternalCommands
+    tags:
+      - { name: drush.command }

@@ -1,0 +1,64 @@
+miniorange_oauth_client.admin:
+  version: VERSION
+  css:
+    layout:
+      css/miniorange_oauth_client.admin.css: {}
+
+miniorange_oauth_client.style_settings:
+  version: VERSION
+  css:
+    layout:
+      css/miniorange_oauth_client.style_settings.css: {}
+
+miniorange_oauth_client.oauth_config:
+  version: VERSION
+  js:
+    js/mo_oauth_config.js: {}
+
+miniorange_oauth_client.testconfig:
+  version: VERSION
+  js:
+    js/testconfig.js: {}
+
+miniorange_oauth_client.returnAttribute:
+  version: VERSION
+  js:
+    js/mo-return.js: {}
+
+miniorange_oauth_client.appVal:
+  version: VERSION
+  js:
+    js/appVal.js: {}
+
+
+miniorange_oauth_client.main:
+  version: VERSION
+  js:
+    js/mo_oauth_upgrade.js: {}
+
+# Below library is used to show tooltip
+# You can find original library at https://atomiks.github.io/tippyjs/
+miniorange_oauth_client.tippyjs:
+  remote: https://github.com/atomiks/tippyjs
+  version: '6.3.7'
+  license:
+    name: MIT
+    url: https://github.com/atomiks/tippyjs/blob/master/LICENSE
+    gpl-compatible: true
+  js:
+    js/popper.min.js: {}
+    js/tippy-bundle.umd.min.js: {}
+  dependencies:
+    - core/popperjs
+    - core/jquery
+
+miniorange_oauth_client.mo_tooltip:
+  version: VERSION
+  js:
+    js/mo_tooltip.js: { }
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/jquery.once
+    - core/once
+    - miniorange_oauth_client/miniorange_oauth_client.tippyjs

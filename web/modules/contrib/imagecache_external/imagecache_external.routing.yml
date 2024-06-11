@@ -1,0 +1,14 @@
+imagecache_external.admin_settings:
+  path: '/admin/config/media/imagecache_external'
+  defaults:
+    _form: '\Drupal\imagecache_external\Form\SettingsForm'
+    _title: 'Imagecache External'
+  requirements:
+    _permission: 'administer imagecache external'
+imagecache_external.imagecache_external_flush_form:
+  path: '/admin/config/media/imagecache_external/flush'
+  defaults:
+    _form: '\Drupal\imagecache_external\Form\FlushExternalImages'
+    _title: 'Flush external images'
+  requirements:
+    _permission: 'administer imagecache external'

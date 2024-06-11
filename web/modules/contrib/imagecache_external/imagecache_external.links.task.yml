@@ -1,0 +1,8 @@
+imagecache_external.admin_settings:
+  title: 'Settings'
+  route_name: imagecache_external.admin_settings
+  base_route: imagecache_external.admin_settings
+imagecache_external.imagecache_external_flush_form:
+  title: 'Flush external images'
+  route_name: imagecache_external.imagecache_external_flush_form
+  base_route: imagecache_external.admin_settings

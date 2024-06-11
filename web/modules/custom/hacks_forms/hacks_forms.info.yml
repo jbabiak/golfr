@@ -1,0 +1,8 @@
+name: Hacks Forms
+description: Place for custom forms and alters
+package: Custom
+type: module
+dependencies:
+  - grint_api
+  - handicap_indexer
+core_version_requirement: ^9 || ^10

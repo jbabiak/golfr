@@ -1,0 +1,117 @@
+<?php
+use Drupal\Core\Render\BubbleableMetadata;
+
+/**
+ * Implements hook_token_info().
+ */
+function hacks_tokens_token_info() {
+  $info['tokens']['node']['season-title'] = [
+    'name' => t('Season title for round'),
+    'description' => t('Returns the season title for a round node.'),
+  ];
+  $info['tokens']['node']['season-round-title'] = [
+    'name' => t('Season title for scores'),
+    'description' => t('Returns the season title for a score node.'),
+  ];
+  $info['tokens']['node']['round-title'] = [
+    'name' => t('Round title for scores'),
+    'description' => t('Returns the round title for a score node.'),
+  ];
+  return $info;
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function hacks_tokens_tokens($type, $tokens, array $data, array $options, BubbleableMetadata $bubbleable_metadata) {
+  $replacements = [];
+
+  if ($type == 'node' && !empty($data['node'])) {
+    $node = $data['node'];
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'season-title':
+          // Assuming field_season_reference is the field name in the round node type
+          if ($node->getType() == 'men_s_night_round') {
+            // Get the entity type manager service.
+            $entityTypeManager = \Drupal::entityTypeManager();
+            // Get the query service for nodes.
+            $query = $entityTypeManager->getStorage('node')->getQuery();
+            // Add conditions to the query.
+            $nidsB = $query
+              ->condition('type', 'men_s_night') // Replace 'B' with the machine name of node type B.
+              ->condition('field_weekly_rounds', $node->id())
+              ->accessCheck(FALSE)
+              ->execute();
+            // Load the node B entities that reference node A.
+            $nodesB = $entityTypeManager->getStorage('node')->loadMultiple($nidsB);
+            // Now $nodesB contains all nodes of type B that reference node A in field_weekly_rounds.
+            $title = '';
+            foreach ($nodesB as $nodeB) {
+              $title = $nodeB->label();
+            }
+            $replacements[$original] = $title;
+          }
+          break;
+        case 'season-round-title':
+          // Assuming field_season_reference is the field name in the round node type
+          if ($node->getType() == 'men_s_night_score') {
+            // Get the entity type manager service.
+            $entityTypeManager = \Drupal::entityTypeManager();
+            // Get the query service for nodes.
+            $query = $entityTypeManager->getStorage('node')->getQuery();
+            // Add conditions to the query.
+            $nidsB = $query
+              ->condition('type', 'men_s_night_round') // Replace 'B' with the machine name of node type B.
+              ->condition('field_scores', $node->id())
+              ->accessCheck(FALSE)
+              ->execute();
+            // Load the node B entities that reference node A.
+            $nodesB = $entityTypeManager->getStorage('node')->loadMultiple($nidsB);
+            // Now $nodesB contains all nodes of type B that reference node A in field_weekly_rounds.
+            $title = '';
+            foreach ($nodesB as $nodeB) {
+              $queryC = $entityTypeManager->getStorage('node')->getQuery();
+              $nidsC = $queryC
+                ->condition('type', 'men_s_night') // Replace 'B' with the machine name of node type B.
+                ->condition('field_weekly_rounds', $nodeB->id())
+                ->accessCheck(FALSE)
+                ->execute();
+              // Load the node B entities that reference node A.
+              $nodesC = $entityTypeManager->getStorage('node')->loadMultiple($nidsC);
+              foreach ($nodesC as $nodeC) {
+                $title = $nodeC->label();
+              }
+            }
+            $replacements[$original] = $title;
+          }
+          break;
+        case 'round-title':
+          // Assuming field_season_reference is the field name in the round node type
+          if ($node->getType() == 'men_s_night_score') {
+            // Get the entity type manager service.
+            $entityTypeManager = \Drupal::entityTypeManager();
+            // Get the query service for nodes.
+            $query = $entityTypeManager->getStorage('node')->getQuery();
+            // Add conditions to the query.
+            $nidsB = $query
+              ->condition('type', 'men_s_night_round') // Replace 'B' with the machine name of node type B.
+              ->condition('field_scores', $node->id())
+              ->accessCheck(FALSE)
+              ->execute();
+            // Load the node B entities that reference node A.
+            $nodesB = $entityTypeManager->getStorage('node')->loadMultiple($nidsB);
+            // Now $nodesB contains all nodes of type B that reference node A in field_weekly_rounds.
+            $title = '';
+            foreach ($nodesB as $nodeB) {
+              $title = $nodeB->label();
+            }
+            $replacements[$original] = $title;
+          }
+          break;
+      }
+    }
+  }
+
+  return $replacements;
+}

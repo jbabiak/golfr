@@ -1,0 +1,125 @@
+<?php
+
+
+use Drupal\hacks_scoring\ScoringAPI;
+use Drupal\node\Entity\Node;
+use Drupal\user\Entity\User;
+
+function hacks_scoring_node_presave(Drupal\Core\Entity\EntityInterface $entity) {
+  if ($entity->bundle() === 'men_s_night_score') {
+    $gross_scores = $entity->get('field_18_hole_gross_score')->getValue();
+    $course_handicap = $entity->get('field_course_handicap')->value;
+    $net_scores = [];
+    $total_gross_score = 0;
+    $total_net_score = 0;
+
+    foreach ($gross_scores as $score) {
+      $total_gross_score += (int) $score['value'];
+    }
+
+    $allScoresValid = $total_gross_score >= 0 && count($gross_scores) == 18;
+
+    if ($allScoresValid) {
+      $round_nids = \Drupal::entityQuery('node')
+        ->accessCheck(FALSE)
+        ->condition('type', 'men_s_night_round')
+        ->condition('field_scores', $entity->id())
+        ->execute();
+
+      if (!empty($round_nids)) {
+        $round_nid = reset($round_nids);
+        $round_node = \Drupal\node\Entity\Node::load($round_nid);
+
+        if ($round_node) {
+          $course_nid = $round_node->get('field_course')->target_id;
+          $course_node = \Drupal\node\Entity\Node::load($course_nid);
+
+          if ($course_node) {
+            $scoringAPI = new ScoringAPI();
+            $strokeHoles = $scoringAPI->calc_stroke_holes($entity, $course_node);
+
+            foreach ($gross_scores as $index => $score) {
+              $gross_score = $score['value'];
+              $adjustment = $strokeHoles[$index];
+              $adjustment_sign = $adjustment <=> 0;
+
+
+              if ($gross_score == 0) {
+                $adjustedScore = 0;
+              } else {
+                if ($adjustment_sign > 0) {
+                  // If adding a stroke, add 1 instead of 0.5
+                  $adjustedScore = $gross_score + $adjustment;
+                } else {
+                  // If removing a stroke, subtract 0.5
+                  $adjustedScore = $gross_score + $adjustment - 0.5 * $adjustment_sign;
+                }
+                $total_net_score += $adjustedScore;  // Calculate total net score including adjustments
+              }
+              $net_scores[] = ['value' => $adjustedScore];
+            }
+            $total_net_score = $total_gross_score - $course_handicap;
+            // Update the 'field_18_hole_net_score'
+            $entity->set('field_18_hole_net_score', $net_scores);
+
+            // Set the total gross and net scores
+            $entity->set('field_total_gross_score', $total_gross_score);
+            $entity->set('field_total_net_score', $total_net_score);
+
+            $result = $scoringAPI->calculate_round_points($entity, $course_node);
+
+            $entity->set('field_18_hole_points', array_map(function ($point) {
+              return ['value' => $point];
+            }, $result['points']));
+
+            // Update count fields
+            foreach ($result['counts'] as $type => $count) {
+              $fieldName = 'field_' . $type;
+              $entity->set($fieldName, $count);
+            }
+            $entity->set('field_league_points', $result['total_points']);
+          }
+        }
+      }
+    }
+  }
+}
+
+
+function hacks_scoring_node_update(Drupal\Core\Entity\EntityInterface $entity) {
+  static $is_processing = false;
+
+  if ($entity->bundle() === 'men_s_night_score') {
+    if ($is_processing) {
+      return;
+    }
+
+    $is_processing = true;
+
+    $user = \Drupal\user\Entity\User::load($entity->get('field_player')->target_id);
+    $scoringAPI = new ScoringAPI();
+    $updates = $scoringAPI->calculate_used_scores($entity, $user);
+
+    foreach ($updates as $score_id => $used_in_total) {
+      // Load and save each node if it's not the current node being processed
+      if ($score_id != $entity->id()) {
+        $score_node = Node::load($score_id);
+        if ($score_node->get('field_used_in_total')->value !== $used_in_total) {
+          $score_node->set('field_used_in_total', $used_in_total);
+          $score_node->save();
+        }
+      }
+    }
+
+    // Now handle the current node, but only update if needed
+    if (isset($updates[$entity->id()]) && $entity->get('field_used_in_total')->value !== $updates[$entity->id()]) {
+      $entity->set('field_used_in_total', $updates[$entity->id()]);
+      // Bypass the hooks for saving to prevent recursion
+      $entity->save();
+    }
+
+    $scoringAPI->calculate_round_skins($entity);
+
+    $is_processing = false;
+  }
+}

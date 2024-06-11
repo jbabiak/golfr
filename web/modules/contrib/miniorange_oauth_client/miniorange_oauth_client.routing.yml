@@ -1,0 +1,112 @@
+miniorange_oauth_client.customer_setup:
+  path: /admin/config/people/miniorange_oauth_client/customer_setup
+  defaults:
+    _title: 'OAuth/OIDC Client Configuration &nbsp;&nbsp;&nbsp; <a class="button button--primary js-form-submit form-submit use-ajax mo_top_bar_button" href="requestDemo">Request 7-days trial</a>'
+    _form: \Drupal\miniorange_oauth_client\Form\MiniorangeOAuthClientCustomerSetup
+  requirements:
+    _permission: 'administer site configuration'
+
+miniorange_oauth_client.config_clc:
+  path: /admin/config/people/miniorange_oauth_client/config_clc
+  defaults:
+    _title: 'OAuth/OIDC Client Configuration &nbsp;&nbsp;&nbsp; <a class="button button--primary js-form-submit form-submit use-ajax mo_top_bar_button" href="requestDemo">Request 7-days trial</a>'
+    _form: \Drupal\miniorange_oauth_client\Form\MiniorangeConfigOAuthClient
+  requirements:
+    _permission: 'administer site configuration'
+
+miniorange_oauth_client.mapping:
+  path: /admin/config/people/miniorange_oauth_client/mapping
+  defaults:
+    _title: 'OAuth/OIDC Client Configuration &nbsp;&nbsp;&nbsp; <a class="button button--primary js-form-submit form-submit use-ajax mo_top_bar_button" href="requestDemo">Request 7-days trial</a>'
+    _form: \Drupal\miniorange_oauth_client\Form\MiniorangeMapping
+  requirements:
+    _permission: "administer site configuration"
+
+miniorange_oauth_client.settings:
+  path: /admin/config/people/miniorange_oauth_client/Settings
+  defaults:
+    _title: 'OAuth/OIDC Client Configuration &nbsp;&nbsp;&nbsp; <a class="button button--primary js-form-submit form-submit use-ajax mo_top_bar_button" href="requestDemo">Request 7-days trial</a>'
+    _form: \Drupal\miniorange_oauth_client\Form\Settings
+  requirements:
+    _permission: "administer site configuration"
+
+miniorange_oauth_client.licensing:
+  path: /admin/config/people/miniorange_oauth_client/licensing
+  defaults:
+    _title: 'OAuth/OIDC Client Configuration &nbsp;&nbsp;&nbsp; <a class="button button--primary js-form-submit form-submit use-ajax mo_top_bar_button" href="requestDemo">Request 7-days trial</a>'
+    _form: \Drupal\miniorange_oauth_client\Form\MiniorangeLicensing
+  requirements:
+    _permission: "administer site configuration"
+
+miniorange_oauth_client.login_reports:
+  path: /admin/config/people/miniorange_oauth_client/LoginReports
+  defaults:
+    _title: 'OAuth/OIDC Client Configuration &nbsp;&nbsp;&nbsp; <a class="button button--primary js-form-submit form-submit use-ajax mo_top_bar_button" href="requestDemo">Request 7-days trial</a>'
+    _form: \Drupal\miniorange_oauth_client\Form\MiniorangeLoginReports
+  requirements:
+    _permission: "administer site configuration"
+
+miniorange_oauth_client.mo_login:
+  path: /mo_login
+  defaults:
+    _controller: '\Drupal\miniorange_oauth_client\Controller\miniorange_oauth_clientController::miniorange_oauth_client_mo_login'
+  requirements:
+    _access: "TRUE"
+miniorange_oauth_client.moLogin:
+  path: /moLogin
+  defaults:
+    _controller: '\Drupal\miniorange_oauth_client\Controller\miniorange_oauth_clientController::miniorange_oauth_client_mologin'
+  requirements:
+    _access: "TRUE"
+miniorange_oauth_client.testConfig:
+  path: /testSSO
+  defaults:
+    _controller: '\Drupal\miniorange_oauth_client\Controller\miniorange_oauth_clientController::test_mo_config'
+  requirements:
+    _permission: "administer site configuration"
+
+miniorange_oauth_client.request_demo:
+  path: /admin/config/people/miniorange_oauth_client/requestDemo
+  defaults:
+    _title: "miniorange OAuth Client Request Demo"
+    _controller: '\Drupal\miniorange_oauth_client\Controller\miniorange_oauth_clientController::openDemoRequestForm'
+  requirements:
+    _permission: "administer site configuration"
+
+miniorange_oauth_client.post_testconfig:
+  path: /mo_post_testconfig
+  defaults:
+    _controller: '\Drupal\miniorange_oauth_client\Controller\miniorange_oauth_clientController::mo_post_testconfig'
+  requirements:
+    _permission: "administer site configuration"
+
+miniorange_oauth_client.oauth_customer_support:
+  path: /admin/config/people/miniorange_oauth_client/CustomerSupportClient
+  defaults:
+    _title: "miniOrange OAuth Client Customer Support"
+    _form: \Drupal\miniorange_oauth_client\Form\MoOAuthCustomerRequest
+  requirements:
+    _permission: "administer site configuration"
+
+miniorange_oauth_client.add_new_provider:
+  path: /admin/config/people/miniorange_oauth_client/addnewprovider
+  defaults:
+    _controller: '\Drupal\miniorange_oauth_client\Controller\miniorange_oauth_clientController::openaddnewproviderform'
+  requirements:
+    _permission: "administer site configuration"
+
+miniorange_oauth_client.backup_config:
+  path: /admin/config/people/miniorange_oauth_client/backup
+  defaults:
+    _title: "Backup/Import Module Configurations"
+    _form: \Drupal\miniorange_oauth_client\Form\MoOAuthBackupConfig
+  requirements:
+    _permission: "administer site configuration"
+
+miniorange_oauth_client.removeAccount:
+  path: /removeMoAccount
+  defaults:
+    _title: 'OAuth/OIDC Client Remove Account'
+    _controller: '\Drupal\miniorange_oauth_client\Controller\miniorange_oauth_clientController::openRemoveAccountForm'
+  requirements:
+    _permission: 'administer site configuration'

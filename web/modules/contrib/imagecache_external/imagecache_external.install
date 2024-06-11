@@ -1,0 +1,95 @@
+<?php
+
+/**
+ * @file
+ * Uninstall, install, and update functions.
+ */
+
+use Drupal\Core\Url;
+
+/**
+ * Implements hook_requirements().
+ */
+function imagecache_external_requirements($phase) {
+  $config = \Drupal::config('imagecache_external.settings');
+  $requirements = [];
+
+  // Check the Imagecache External configuration.
+  if ($phase == 'runtime') {
+    $hosts = $config->get('imagecache_external_hosts');
+    $use_whitelist = $config->get('imagecache_external_use_whitelist');
+    if ($use_whitelist && empty($hosts)) {
+      $requirements['imagecache_external'] = [
+        'title' => t('Imagecache External'),
+        'value' => t('Not properly configured'),
+        'description' => t('The configuration is set to use a whitelist but no hostname(s) are configured. <a href="@link">Add one or more trusted hostnames</a> or <a href="@link">disable the whitelist functionality</a>.', ['@link' => Url::fromRoute('imagecache_external.admin_settings')->toString()]),
+        'severity' => REQUIREMENT_WARNING,
+      ];
+    }
+    else {
+      $requirements['imagecache_external'] = [
+        'title' => t('Imagecache External'),
+        'value' => t('Properly configured'),
+        'severity' => REQUIREMENT_OK,
+      ];
+    }
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function imagecache_external_uninstall() {
+  \Drupal::state()->delete('imagecache_external.last_cron_flush');
+}
+
+/**
+ * Add imagecache_external_batch_flush_limit to the default configuration.
+ */
+function imagecache_external_update_8101() {
+  $config_factory = \Drupal::configFactory();
+  $config = $config_factory->getEditable('imagecache_external.settings');
+  $config->set('imagecache_external_batch_flush_limit', 1000);
+  $config->save(TRUE);
+}
+
+/**
+ * Update imagecache_fallback_image setting.
+ */
+function imagecache_external_update_8102() {
+  $config_factory = \Drupal::configFactory();
+  $config = $config_factory->getEditable('imagecache_external.settings');
+
+  $fallback_image = 0;
+  $fallback_image_setting = $config->get('imagecache_fallback_image');
+  if (is_array($fallback_image_setting) && !empty($fallback_image_setting[0])) {
+    $fallback_image = $fallback_image_setting[0];
+  }
+  $config->set('imagecache_fallback_image', $fallback_image);
+  $config->save(TRUE);
+}
+
+/**
+ * Add webp support.
+ */
+function imagecache_external_update_8103() {
+  $config_factory = \Drupal::configFactory();
+  $config = $config_factory->getEditable('imagecache_external.settings');
+  $mime_types = $config->get('imagecache_external_allowed_mimetypes');
+  $mime_types[] = 'image/webp';
+  $mime_types[] = 'image/webp;charset=utf-8';
+  $config->set('imagecache_external_allowed_mimetypes', $mime_types);
+  $config->save(TRUE);
+}
+
+/**
+ * Add imagecache_subdirectories to the default configuration.
+ */
+function imagecache_external_update_8104() {
+  $config_factory = \Drupal::configFactory();
+  $config = $config_factory->getEditable('imagecache_external.settings');
+  $config->set('imagecache_subdirectories', FALSE);
+  $config->save(TRUE);
+}

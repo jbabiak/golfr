@@ -1,0 +1,18 @@
+views.filter.views_selective_filters_filter:
+  type: views_filter
+  label: 'Views Selective Filter settings'
+  mapping:
+    value:
+      type: sequence
+      sequence:
+        type: string
+    selective_display_field:
+      type: string
+    selective_display_sort:
+      type: string
+    selective_aggregated_fields:
+      type: string
+    selective_items_limit:
+      type: integer
+    selective_entity_type:
+      type: string

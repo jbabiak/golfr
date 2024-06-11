@@ -1,0 +1,177 @@
+/*
+Theme Name: Bootstrap 4 Sass
+Description: Bootstrap 4 with Sass
+*/
+
+// import files
+@import "import";
+
+/* GENERAL STYLES
+-------------------------------------------------*/
+.navbar-brand img {
+  height: 100px;
+  margin: 0 30px;
+}
+nav#navbar-main {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-content: center;
+  justify-content: center;
+  align-items: center;
+}
+
+.form-type-search.mb-3 {
+  margin-top:1rem !important;
+}
+
+body {
+    background: $primary-shade;
+}
+ul.nav.nav-tabs {
+    .nav-link,
+    .nav-link.active{
+      margin-bottom: calc(-1 * var(--bs-nav-tabs-border-width));
+      border: none !important;
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+    }
+}
+
+.user-login-form a {
+  @extend .btn;
+  @extend .btn-warning;
+}
+
+/* COLORS
+--------------------------------------------------*/
+
+a {
+    color: $yellow;
+}
+
+.bg-inverse {
+    background: $white;
+}
+
+.site-footer {
+    background: $primary-shade !important;
+}
+
+.menu--main li a {
+    color: $white;
+    font-size: medium;
+    font-weight: 400;
+}
+
+.menu--account li a {
+    color: $accent-shade;
+}
+
+.site-name-slogan a {
+    text-decoration: none;
+}
+
+.card-group img {
+    margin: 0;
+    width: 100%;
+    height: auto;
+}
+
+.card-group .field--type-image {
+    margin: 0
+}
+
+.slick {
+    width: 100%;
+}
+
+.slick>div {
+    margin: 0 15px;
+}
+
+.field__item {
+  background: none !important;
+}
+.field__label {
+  color: $yellow !important;
+}
+//Table
+td.is-active {
+  background-color: transparent;
+}
+td {
+  vertical-align: middle;
+}
+table.scorecard-table-input {
+  > * {
+    text-align: center;
+    vertical-align: middle;
+  }
+  [data-drupal-selector="edit-front-putts"],
+  [data-drupal-selector="edit-front-score"] {
+    td {
+
+    }
+  }
+  .form-type-textfield {
+    margin: 0 !important;
+    input {
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+    .form-control{
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      text-align: center;
+      min-width: 50px;
+    }
+  }
+}
+
+//modal
+.round-container.clicked {
+  border: solid $primary-shade 2px;
+}
+.round-container {
+  display: flex;
+  border: solid transparent 2px;
+  padding: 10px;
+  margin: 0 !important;
+}
+.ui-dialog .ui-dialog-titlebar-close:before {
+  content: 'X';
+  font-family: Arial, sans-serif;
+  color: #000;
+  font-size: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.ui-dialog .ui-dialog-titlebar-close {
+  text-indent: 0;
+  overflow: visible;
+}
+
+.ui-dialog-titlebar.ui-widget-header {
+  background: $primary-shade;
+  color: $white;
+  border-radius: 0;
+}
+
+.ui-dialog {
+  .button {
+    background: $accent-shade !important;
+    border-radius: 0 !important;
+    color:$white !important;
+  }
+}
+.ui-dialog {
+  max-width: 100%;
+}
+
+
+//ajax throbber
+.ajax-throbber .sk-chase-dot:before {
+  background-color: $white;
+}

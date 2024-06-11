@@ -1,0 +1,7 @@
+ajax_loader.settings:
+  path: '/admin/config/user-interface/ajax-loader'
+  defaults:
+    _form: '\Drupal\ajax_loader\Form\AjaxLoaderSettingsForm'
+    _title: 'Ajax loader'
+  requirements:
+    _permission: 'administer ajax loader'

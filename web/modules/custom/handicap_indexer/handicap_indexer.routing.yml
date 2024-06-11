@@ -1,0 +1,7 @@
+handicap_indexer.update_handicap_everyone:
+  path: '/update-handicap-everyone'
+  defaults:
+    _title: Update Everyones Handicap
+    _form: '\Drupal\handicap_indexer\Form\HandicapUpdateAll'
+  requirements:
+    _permission: 'edit own content'

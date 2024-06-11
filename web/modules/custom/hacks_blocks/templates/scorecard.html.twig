@@ -1,0 +1,175 @@
+<div class="scorecard-container">
+  <div class="scorecard">
+    <table>
+      <thead>
+        <tr>
+          <th>Hole</th>
+          {% for i in 1..18 %}
+            <th>{{ i }}</th>
+            {% if i == 9 %}
+              <th>OUT</th>
+            {% elseif i == 18 %}
+              <th>IN</th>
+              <th>Total</th>
+            {% endif %}
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>Par</th>
+          {% set out_total_par = 0 %}
+          {% set in_total_par = 0 %}
+          {% for i in 0..17 %}
+            {% set par = course_node.field_course_par_holes[i].value %}
+            <td>{{ par }}</td>
+            {% if i < 9 %}
+              {% set out_total_par = out_total_par + par %}
+            {% else %}
+              {% set in_total_par = in_total_par + par %}
+            {% endif %}
+            {% if i == 8 %}
+              <td>{{ out_total_par }}</td>
+            {% elseif i == 17 %}
+              <td>{{ in_total_par }}</td>
+              <td>{{ course_node.field_course_par_total.value }}</td>
+            {% endif %}
+          {% endfor %}
+        </tr>
+        <tr>
+          <th>Gross Score</th>
+          {% set out_gross_score = 0 %}
+          {% set in_gross_score = 0 %}
+          {% for i in 0..17 %}
+            {% set gross_score = score_node.field_18_hole_gross_score[i].value %}
+            {% set par = course_node.field_course_par_holes[i].value %}
+            {% set score_diff = gross_score - par %}
+            {% set class = 'normal' %}
+            {% if score_diff == -3 %}
+              {% set class = 'albatross' %}
+            {% elseif score_diff == -2 %}
+              {% set class = 'eagle' %}
+            {% elseif score_diff == -1 %}
+              {% set class = 'birdie' %}
+            {% elseif score_diff == 0 %}
+              {% set class = 'par' %}
+            {% elseif score_diff == 1 %}
+              {% set class = 'bogey' %}
+            {% elseif score_diff == 2 %}
+              {% set class = 'double-bogey' %}
+            {% endif %}
+            <td class="{{ class }}">{{ gross_score }}</td>
+            {% if i < 9 %}
+              {% set out_gross_score = out_gross_score + gross_score %}
+            {% else %}
+              {% set in_gross_score = in_gross_score + gross_score %}
+            {% endif %}
+            {% if i == 8 %}
+              <td class="out-total">{{ out_gross_score }}</td>
+            {% elseif i == 17 %}
+              <td class="in-total">{{ in_gross_score }}</td>
+              <td class="total">{{ out_gross_score + in_gross_score }}</td>
+            {% endif %}
+          {% endfor %}
+        </tr>
+        <tr>
+          <th>Net Score</th>
+          {% set out_score = 0 %}
+          {% set in_score = 0 %}
+          {% set course_handicap = score_node.field_course_handicap.value %}
+          {% for i in 0..17 %}
+            {% set net_score = score_node.field_18_hole_net_score[i].value %}
+            {# Ensure net_score is treated as a float for the modulo operation #}
+            {% set net_score_float = net_score|number_format(2, '.', '') %}
+            {% set decimal_part = (net_score_float - (net_score_float|round(0, 'floor'))) %}
+            {% if decimal_part == 0.5 %}
+              {% if course_handicap > 0 %}
+                {% set net_score_float = net_score_float - 0.5 %}
+              {% elseif course_handicap < 0 %}
+                {% set net_score_float = net_score_float + 0.5 %}
+              {% endif %}
+            {% endif %}
+             {% set point = score_node.field_18_hole_points[i].value %}
+             {% set class = 'normal' %}
+              {% if point == 5 %}
+                {% set class = 'albatross' %}
+              {% elseif point == 4 %}
+                {% set class = 'eagle' %}
+              {% elseif point == 3 %}
+                {% set class = 'birdie' %}
+              {% elseif point == 2 %}
+                {% set class = 'par' %}
+              {% elseif point == 1 %}
+                {% set class = 'bogey' %}
+              {% elseif point == 0 %}
+                {% set class = 'double-bogey' %}
+              {% endif %}
+             <td class="{{ class }}">{{ net_score_float|round(0, 'common') }}</td>
+            {% if i < 9 %}
+              {% set out_score = out_score + net_score_float|round(0, 'common') %}
+            {% else %}
+              {% set in_score = in_score + net_score_float|round(0, 'common') %}
+            {% endif %}
+            {% if i == 8 %}
+              <td>{{ out_score|round(0, 'common') }}</td>
+            {% elseif i == 17 %}
+              <td>{{ in_score|round(0, 'common') }}</td>
+              <td>{{ score_node.field_total_net_score.value|round(0, 'common') }}</td>
+            {% endif %}
+          {% endfor %}
+        </tr>
+        <tr>
+          <th>Putts</th>
+          {% set out_putts = 0 %}
+          {% set in_putts = 0 %}
+          {% for i in 0..17 %}
+            {% set putt = score_node.field_18_hole_putt_score[i].value %}
+            <td>{{ putt }}</td>
+            {% if i < 9 %}
+              {% set out_putts = out_putts + putt %}
+            {% else %}
+              {% set in_putts = in_putts + putt %}
+            {% endif %}
+            {% if i == 8 %}
+              <td>{{ out_putts }}</td>
+            {% elseif i == 17 %}
+              <td>{{ in_putts }}</td>
+              <td>{{ out_putts + in_putts }}</td>
+            {% endif %}
+          {% endfor %}
+        </tr>
+        <tr>
+          <th>Points</th>
+          {% set out_points = 0 %}
+          {% set in_points = 0 %}
+          {% for i in 0..17 %}
+            {% set point = score_node.field_18_hole_points[i].value %}
+            <td>{{ point }}</td>
+            {% if i < 9 %}
+              {% set out_points = out_points + point %}
+            {% else %}
+              {% set in_points = in_points + point %}
+            {% endif %}
+            {% if i == 8 %}
+              <td>{{ out_points }}</td>
+            {% elseif i == 17 %}
+              <td>{{ in_points }}</td>
+              <td>{{ out_points + in_points }}</td>
+            {% endif %}
+          {% endfor %}
+        </tr>
+        <tr>
+          <th>Skins</th>
+          {% for i in 0..17 %}
+            {% set skin = score_node.field_18_hole_skins[i].value %}
+            <td>{% if skin == 1 %}✓{% else %}&nbsp;{% endif %}</td>
+            {% if i == 8 or i == 17 %}
+              <td></td>  {# Empty cells for OUT, IN, and Total in Skins row for alignment #}
+            {% endif %}
+          {% endfor %}
+          <td>{{score_node.field_skins.value}}</td>  {# Empty cell for alignment under Total column #}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

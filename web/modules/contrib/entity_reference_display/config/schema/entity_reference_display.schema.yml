@@ -1,0 +1,20 @@
+field.formatter.settings.entity_reference_display_default:
+  type: field.formatter.settings.entity_reference_entity_view
+  label: 'Entity reference display formatter settings'
+  mapping:
+    display_field:
+      type: string
+      label: 'Display mode field'
+
+field.field_settings.entity_reference_display:
+  type: mapping
+  mapping:
+    exclude:
+      type: sequence
+      label: 'Display modes'
+      sequence:
+        type: string
+        label: 'Display mode'
+    negate:
+      type: boolean
+      label: 'Include selected display modes'

@@ -1,0 +1,8 @@
+eca_ui.listing:
+  version: VERSION
+  js:
+    js/eca_ui.listing.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/once

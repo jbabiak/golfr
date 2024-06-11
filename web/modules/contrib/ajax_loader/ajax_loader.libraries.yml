@@ -1,0 +1,20 @@
+ajax_loader.admin:
+  version: 1.x
+  css:
+    base:
+      css/throbber-general.css: {}
+    theme:
+      css/throbber-admin.css: {}
+
+ajax_loader.throbber:
+  version: 1.x
+  css:
+    base:
+      css/throbber-general.css: {}
+  js:
+    js/ajax-throbber.js: {}
+  dependencies:
+      - core/jquery
+      - core/drupal
+      - core/drupalSettings
+      - core/drupal.ajax

@@ -1,0 +1,38 @@
+
+
+.highcharts-root {
+ .highcharts-legend-item,
+ .highcharts-axis,
+ .highcharts-axis-labels {
+   text {
+     fill: white !important;
+   }
+ }
+}
+.highcharts-title {
+  fill: white !important;
+  color: white !important;
+}
+td.views-field.views-field-field-used-in-total.views-align-center {
+  color: white;
+}
+
+.field.field--name-field-used-in-total.field--type-boolean.field--label-inline {
+  .field__item {
+    color:white;
+  }
+}
+
+.block.block-layout-builder.block-field-blockuseruserfield-grint-image-url img {
+  border: 5px solid yellow;
+}
+
+.field.field--name-field-handicap-index.field--type-decimal.field--label-inline {
+  .field__label {
+    width: 125px;
+  }
+  .field__item {
+    width: 100px;
+    min-width:60px;
+  }
+}

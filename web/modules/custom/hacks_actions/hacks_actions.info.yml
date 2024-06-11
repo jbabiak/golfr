@@ -1,0 +1,8 @@
+name: Hacks Actions
+description: Place for custom actions
+package: Custom
+type: module
+dependencies:
+  - grint_api
+  - handicap_indexer
+core_version_requirement: ^9 || ^10

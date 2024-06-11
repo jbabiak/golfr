@@ -1,0 +1,5 @@
+name: Grint API
+description: API for the grint
+package: Custom
+type: module
+core_version_requirement: ^9 || ^10

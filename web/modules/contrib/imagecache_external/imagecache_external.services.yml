@@ -1,0 +1,9 @@
+services:
+  logger.channel.imagecache_external:
+    parent: logger.channel_base
+    arguments: ['imagecache_external']
+  imagecache_external.twig_extension:
+    class: Drupal\imagecache_external\TwigExtension
+    arguments: ['@entity_type.manager', '@file_url_generator']
+    tags:
+      - { name: twig.extension }

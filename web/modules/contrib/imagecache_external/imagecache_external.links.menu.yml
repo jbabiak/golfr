@@ -1,0 +1,5 @@
+imagecache_external.admin_settings:
+  title: 'Imagecache External'
+  description: 'Set a cache path, the default extension and white list hosts.'
+  route_name: imagecache_external.admin_settings
+  parent: 'system.admin_config_media'

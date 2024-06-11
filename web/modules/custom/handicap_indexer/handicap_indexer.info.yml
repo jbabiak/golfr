@@ -1,0 +1,7 @@
+name: Handicap Indexer
+description: Indexer for Handicaps
+package: Custom
+type: module
+dependencies:
+  - grint_api
+core_version_requirement: ^9 || ^10

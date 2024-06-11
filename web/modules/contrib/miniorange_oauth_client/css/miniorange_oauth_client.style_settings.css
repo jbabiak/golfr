@@ -1,0 +1,403 @@
+#miniorange_oauth_client_app {
+   border-radius: 4px;
+}
+
+.mo_oauth_highlight_background_note {
+   background-color: #e0e0e0;
+   border-radius: 4px;
+   padding: 0.55em;
+   width: 98%;
+}
+
+.question{
+   object-fit: fill;
+}
+
+.mo_oauth_highlight_background_note_2 {
+   background-color: #e0e0e0;
+   border-radius: 4px;
+   padding: 0.55em;
+   width: 70.3%;
+}
+
+#text_field1,
+#text_field2,
+#text_field3,
+#text_field4,
+#callbackurl,
+#miniorange_oauth_client_auth_ep,
+#miniorange_oauth_client_access_token_ep,
+#miniorange_oauth_client_user_info_ep,
+#miniorange_oauth_client_display_name {
+   margin: 8px 0;
+   display: inline-block;
+}
+
+.mo_oauth_table_layout input[type=text] {
+   width: 80%;
+}
+
+.mo_oauth_container_63 {
+   width: 63%;
+   padding: 25px;
+   border-radius: 4px !important;
+   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+   margin-left: auto;
+   margin-right: auto;
+   float: left;
+}
+
+.mo_oauth_container {
+   width: auto;
+   padding: 25px;
+   border-radius: 4px !important;
+   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+   margin-left: auto;
+   margin-right: auto;
+   float: left;
+}
+
+.mo_oauth_container_signinsettings{
+   width: 98%;
+   padding: 25px;
+   border-radius: 4px !important;
+   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+   margin-left: auto;
+   margin-right: auto;
+   float: left;
+}
+
+.mo_oauth_table_layout_1 {
+   background-color: #e0e0d8 !important;
+   width: 97% !important;
+   padding: 1.5% !important;
+   overflow: hidden;
+}
+
+.mo_oauth_tooltip {
+   position: relative;
+   display: inline-block;
+}
+
+.mo_oauth_tooltiptext {
+   visibility: hidden;
+   width: 350px;
+   background-color: #737373;
+   color: white;
+   text-align: center;
+   border-radius: 6px;
+   padding: 5px 0;
+   /* Position the tooltip */
+   position: absolute;
+   z-index: 1;
+   opacity: 0;
+   transition: opacity 1s;
+}
+
+.mo_oauth_tooltip:hover+.mo_oauth_tooltiptext {
+   visibility: visible;
+   opacity: 1;
+}
+
+.mo_oauth_tooltip_cb {
+   position: relative;
+   display: inline-block;
+}
+
+.mo_oauth_tooltiptext_cb {
+   visibility: hidden;
+   width: 350px;
+   background-color: #737373;
+   color: white;
+   text-align: center;
+   border-radius: 6px;
+   padding: 5px 0;
+   /* Position the tooltip */
+   position: absolute;
+   z-index: 1;
+   opacity: 0;
+   transition: opacity 1s;
+}
+
+.mo_oauth_tooltip_cb:hover+.mo_oauth_tooltiptext_cb {
+   visibility: visible;
+   opacity: 1;
+}
+
+.mo_oauth_highlight_background_note_1 {
+   background-color: #e0e0e0;
+   border-radius: 4px;
+   padding: 0.55em;
+   width: 90%;
+}
+
+.mo_oauth_highlight_background_note_add_new_provider {
+   background-color: #e0e0e0;
+   border-radius: 4px;
+   padding: 0.55em;
+   width:74%;
+   margin-top: 20px;
+}
+
+
+/*marketing site setup guides table*/
+
+.mo_guide_table {
+   max-width: 100%;
+   margin-bottom: 20px;
+   border-spacing: 0;
+   border-collapse: collapse;
+   font-size: 13px;
+}
+
+.mo_guide_table-bordered>thead>tr>th {
+   border-bottom-width: 2px;
+}
+
+.mo_guide_table-bordered {
+   border: 1px solid #ddd;
+}
+
+.mo_guide_table-bordered>thead>tr>th,
+.mo_guide_table-bordered>tbody>tr>td {
+   border: 1px solid #ddd;
+}
+
+.mo_guide_table>thead>tr>th {
+   padding: 8px;
+   line-height: 1.42857143;
+}
+
+.mo_guide_text-center {
+   text-align: center;
+}
+
+.mo_guide_table-striped>tbody>tr:nth-of-type(odd) {
+   background-color: #f9f9f9;
+}
+
+.mo_guide_text-color {
+   color: #fe7e00;
+}
+
+.mo_oauth_table_layout {
+   background-color: #FFFFFF;
+   border: 1px solid #CCCCCC;
+   padding: 7px 15px 15px 15px;
+   margin-bottom: 10px;
+   border-radius: 4px !important;
+   overflow: hidden;
+}
+
+.mo_oauth_table_layout td strong {
+   margin-left: 10px;
+}
+
+.form-textarea {
+   padding: 2px !important;
+   box-sizing: border-box !important;
+   padding: 0.3em 0.4em 0.3em 0.5em !important;
+   border: 1px solid #b8b8b8 !important;
+   border-top-color: #999 !important;
+   border-radius: 2px !important;
+   background: #fcfcfa !important;
+   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.125) !important;
+}
+
+@media only screen and (max-width:641px) {
+   .form-textarea {
+      width: 100% !important;
+   }
+}
+
+.form-text {
+   padding: 2px !important;
+   box-sizing: border-box !important;
+   padding: 0.3em 0.4em 0.3em 0.5em !important;
+   border: 1px solid #b8b8b8 !important;
+   border-top-color: #999 !important;
+   border-radius: 2px !important;
+   background: #fcfcfa !important;
+   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.125) !important;
+}
+
+@media only screen and (max-width:641px) {
+   .form-text {
+      width: 100% !important;
+   }
+}
+
+.mo_oauth_container_2 {
+   width: 28%;
+   padding: 2%;
+   border-radius: 4px !important;
+   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+   float: right;
+   margin-left: 1.5%;
+}
+
+.mo_oauth_no_feature {
+   padding-left: 26%;
+}
+
+.scrollit {
+   overflow: scroll;
+   height: 345px;
+}
+
+.mo_td_values {
+   font-size: 14px;
+   font-weight: 600;
+   font-family: sans-serif;
+}
+
+.mo_oauth_pricing-rate:last-of-type {
+   margin-top: 46px;
+}
+
+.mo_oauth_table_layout_1 {
+   background-color: #e0e0d8;
+   width: 97%;
+   padding: 2%;
+}
+
+.mo_oauth_instruction_style {
+   background-color: rgba(173, 216, 230, 0.3);
+   padding: 12px;
+   font-family: sans-serif
+}
+
+.mo_custom_font_size_1 {
+   font-size: 1.3em;
+}
+
+.mo_custom_font_size_2 {
+   font-size: 1.1em;
+}
+
+.mo_custom_font_size_3 {
+   font-size: 0.9em;
+   padding-left: 15px;
+   padding-top: 5px;
+}
+
+.mo_oauth_client_welcome_message {
+   display: block;
+   margin-top: 10px;
+   text-align: center;
+   font-size: 15px;
+   color: rgba(0, 128, 0, 0.80);
+   background-color: rgba(0, 255, 0, 0.15);
+   padding: 5px;
+}
+
+.mo_attr_table {
+   font-size: 17px;
+   font-weight: 600;
+   font-family: sans-serif
+}
+
+.mo_oauth_backup_download {
+   display: none;
+}
+
+.mo_oauth_backup_cancel {
+   float: right;
+}
+
+.setup_call {
+   color: red;
+}
+
+table.mo_how_to_upgrade td{
+   border: groove;
+   width: 50% !important;
+}
+
+table.mo_how_to_upgrade th{
+   text-align: center;
+   font-size: larger;
+}
+
+.mo_upgrade_plans_features, .mo_how_to_upgrade {
+   margin: 0 1em !important;
+   width: auto;
+   border: black solid 1px !important;
+}
+
+table.mo_topnav_bar td{
+   width: 15%;
+   text-align: center;
+   font-size: 15px;
+   color: #f2f2f2;
+   background-color: #333;
+}
+
+table.mo_topnav_bar td>a{
+   color: #f2f2f2 !important;
+}
+
+table.mo_upgrade_plans_features tr:last-child{
+   border-bottom: black solid 1px !important;
+}
+
+
+table.mo_upgrade_plans_features td{
+   /*border: groove;*/
+   text-align: center;
+   height: 2em;
+   font-weight: 600;
+   width: 24% !important;
+}
+
+table.mo_upgrade_plans_features td+td, table.mo_upgrade_plans_features td+td+td{
+   /*border: groove;*/
+   text-align: center;
+   width: 20% !important;
+}
+
+.mo_oauth_pricing-rate {
+   font-size: 200%;
+   font-weight: 600;
+   position: relative;
+   text-align: center;
+}
+
+table.mo_upgrade_plans_features tbody>:nth-child(1){
+   background-color: #f7fcff !important;
+   border-bottom: black solid 1px;
+}
+
+.mo_oauth_client_highlight_background_note_3{
+   background-color: #e0e0e0;
+   border-radius: 4px;
+   padding: 0.55em;
+   margin: 0 1em;
+   width: 97%;
+}
+
+/** CSS for advertise website security */
+.mo_ns_image1{
+   border: none;
+   padding-bottom: 4%;
+   background-color: white;
+   text-align: center;
+}
+.mo_ns_row{
+   border-right: hidden;
+   border-bottom: hidden;
+}
+.mo_ns_align{
+   text-align: justify;
+}
+.mo_ns_padding{
+   padding: 2% 3%;
+   margin-right: 5%;
+}
+.mo_ns_td{
+   padding-left: 20%;
+}
+
+.download_button{
+   float: right;
+}

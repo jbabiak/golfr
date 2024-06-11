@@ -1,0 +1,37 @@
+<?php
+
+function hacks_blocks_theme() {
+  return [
+    'scorecard' => [
+      'variables' => [
+        'score_node' => NULL,
+        'course_node' => NULL,
+      ],
+      'template' => 'scorecard',
+    ],
+    'progress_bar' => [ // Define your custom progress bar theme hook
+      'variables' => [
+        'percent' => NULL,
+        'label' => NULL,
+        'message' => NULL,
+        'color' => NULL, // Include the color variable
+      ],
+      'template' => 'progress-bar', // Ensure this matches your template file name
+    ],
+    'bsmeter_block' => [
+      'variables' => [
+        'percentage' => 0,
+        'odds' => 0,
+        'handicapDifferential' => 0,
+        'handicapIndex' => 0,
+        'grossScore' => 0,
+        'courseRating' => 0,
+        'courseSlope' => 0,
+        'linktoCourse' => 0,
+      ],
+    ],
+  ];
+}
+
+
+

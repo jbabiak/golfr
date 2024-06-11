@@ -1,0 +1,4 @@
+services:
+  grint_api.grint_api_service:
+    class: Drupal\grint_api\Grint_API_Service
+    arguments: ['@config.factory', '@logger.factory', '@http_client', '@state']

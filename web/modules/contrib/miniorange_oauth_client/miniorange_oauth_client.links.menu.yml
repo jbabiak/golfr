@@ -1,0 +1,35 @@
+miniorange_oauth_client.config_clc:
+  route_name: miniorange_oauth_client.config_clc
+  title: 'miniOrange OAuth Client Configuration'
+  description: 'Configure an Identity Provider that supports OAuth/OpenID protocol'
+  parent: user.admin_index
+
+miniorange_oauth_client.customer_setup:
+  route_name: miniorange_oauth_client.customer_setup
+  title: 'Register/Login'
+  description: 'Register/Login Tab'
+  parent: miniorange_oauth_client.config_clc
+
+miniorange_oauth_client.mapping:
+  route_name: miniorange_oauth_client.mapping
+  title: 'Attribute & Role Mapping'
+  description: 'Attribute & Role Mapping Tab'
+  parent: miniorange_oauth_client.config_clc
+
+miniorange_oauth_client.settings:
+  route_name: miniorange_oauth_client.settings
+  title: 'Sign In Settings'
+  description: 'Sign In Settings Tab'
+  parent: miniorange_oauth_client.config_clc
+
+miniorange_oauth_client.licensing:
+  route_name: miniorange_oauth_client.licensing
+  title: 'Upgrade Plans'
+  description: 'Upgrade Plans Tab'
+  parent: miniorange_oauth_client.config_clc
+
+miniorange_oauth_client.login_reports:
+  route_name: miniorange_oauth_client.login_reports
+  title: 'Login Reports'
+  description: 'Login Reports Tab'
+  parent: miniorange_oauth_client.config_clc

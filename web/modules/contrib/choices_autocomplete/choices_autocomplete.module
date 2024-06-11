@@ -1,0 +1,52 @@
+<?php
+
+/**
+ * @file
+ * Use Choices.js as autocomplete widget for entity reference fields.
+ */
+
+use Drupal\Component\Utility\NestedArray;
+
+/**
+ * Implements hook_theme().
+ */
+function choices_autocomplete_theme($existing, $type, $theme, $path): array {
+  return [
+    'choices_autocomplete' => [
+      'base hook' => 'select',
+    ],
+  ];
+}
+
+/**
+ * Implements hook_theme_suggestions_HOOK_alter().
+ */
+function choices_autocomplete_theme_suggestions_select_alter(array &$suggestions, array $variables): void {
+  if (isset($variables['element']['#choices_autocomplete_options'])) {
+    $suggestions[] = 'choices_autocomplete';
+  }
+}
+
+/**
+ * Implements hook_config_schema_info_alter().
+ */
+function choices_autocomplete_config_schema_info_alter(&$definitions): void {
+  $keys = [
+    'field.widget.settings.options_select_choices',
+    'field.widget.settings.entity_reference_choices',
+  ];
+  foreach ($keys as $key) {
+    $definition = $definitions[$key];
+    $definitions[$key] = $definitions['choices_autocomplete'];
+    if (isset($definition['mapping']['options']['mapping'])) {
+      $definitions[$key]['options']['mapping'] = NestedArray::mergeDeep(
+        $definitions[$key]['mapping']['options']['mapping'],
+        $definition['mapping']['options']['mapping']
+      );
+    }
+  }
+  unset(
+    $definitions['field.widget.settings.entity_reference_choices']['mapping']['placeholder'],
+    $definitions['field.widget.settings.entity_reference_choices']['mapping']['size']
+  );
+}
