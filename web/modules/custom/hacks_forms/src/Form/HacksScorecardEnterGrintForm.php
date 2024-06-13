@@ -42,8 +42,8 @@ class HacksScorecardEnterGrintForm extends FormBase {
         '#attributes' => [
           'class' => ['form-check-input'],
           'id' => $round['numberPost'], // Use the unique ID here
-
         ],
+        '#default_value' => ($counter == 0) ? $round['numberPost'] : NULL,
       ];
       // Add markup for the round
       $form['round'][$round['numberPost']]['markup'] = [

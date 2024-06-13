@@ -10,7 +10,7 @@ use Drupal\Core\State\StateInterface;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Cookie\CookieJar;
-
+use Drupal\Core\Site\Settings;
 use GuzzleHttp\Exception\RequestException;
 
 
@@ -40,8 +40,8 @@ class Grint_API_Service {
   public function login() {
     $response = $this->client->post('/login', [
       'form_params' => [
-        'username' => \Drupal::config('grint_api.settings')->get('username'),
-        'password' => \Drupal::config('grint_api.settings')->get('password'),
+        'username' => Settings::get('grint_api.settings')['username'],
+        'password' => Settings::get('grint_api.settings')['password'],
       ]
     ]);
 
