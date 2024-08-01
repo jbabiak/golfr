@@ -149,14 +149,16 @@ class ScoringAPI
     $score_ids = [];
     foreach ($all_round_ids as $round_id) {
       $round_node = Node::load($round_id);
-      $scores = $round_node->get('field_scores')->getValue();
-      foreach ($scores as $score) {
-        $score_node = Node::load($score['target_id']);
-        if ($score_node
-          && $score_node->get('field_player')->target_id == $user->id()
-          && !empty($score_node->get('field_total_gross_score')->value)
-          && $score_node->get('field_total_gross_score')->value > 0) {
-          $score_ids[] = $score_node->id();
+      if ($round_node) {
+        $scores = $round_node->get('field_scores')->getValue();
+        foreach ($scores as $score) {
+          $score_node = Node::load($score['target_id']);
+          if ($score_node
+            && $score_node->get('field_player')->target_id == $user->id()
+            && !empty($score_node->get('field_total_gross_score')->value)
+            && $score_node->get('field_total_gross_score')->value > 0) {
+            $score_ids[] = $score_node->id();
+          }
         }
       }
     }
