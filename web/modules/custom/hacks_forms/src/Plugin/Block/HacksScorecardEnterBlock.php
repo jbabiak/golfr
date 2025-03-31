@@ -93,7 +93,7 @@ class HacksScorecardEnterBlock extends BlockBase implements ContainerFactoryPlug
             ]
           )->toString();
 
-          $btn_class = ['use-ajax', 'btn', 'btn-warning', $disabled_class];
+          $btn_class = ['btn', 'btn-warning', $disabled_class];
           $link2 = Link::createFromRoute(
             $this->t('Enter Scorecard Manually'),
             'hacks_forms.scorecard_enter_manual_form',
@@ -104,13 +104,30 @@ class HacksScorecardEnterBlock extends BlockBase implements ContainerFactoryPlug
             [
               'attributes' => [
                 'class' => $btn_class,
+              ]
+            ]
+          )->toString();
+
+          $btn_class = ['use-ajax', 'btn', 'btn-danger', $disabled_class];
+          $link3 = Link::createFromRoute(
+            $this->t('Enter Scorecard Golf Canada'),
+            'hacks_forms.scorecard_enter_gc_form',
+            [
+              'scorecardID' => $node->id(),
+              'UID' => $playerId,
+              'GCID' => $node->get('field_player')->entity->get('field_gc_id')->value,
+
+            ],
+            [
+              'attributes' => [
+                'class' => $btn_class,
                 'data-dialog-type' => 'modal',
                 'data-dialog-options' => Json::encode(['width' => 900]),
               ]
             ]
           )->toString();
 
-          $markup = $disabled_message . '<p class="my-3">' . $link1 . '</p><p>' . $link2 . '</p>';
+          $markup = $disabled_message . '<p class="my-3">' . $link1 . '</p><p>' . $link3 . '</p><p>' . $link2 . '</p>';
         }
       }
     }

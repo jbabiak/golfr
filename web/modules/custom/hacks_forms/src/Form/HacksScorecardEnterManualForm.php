@@ -11,6 +11,7 @@ class HacksScorecardEnterManualForm extends FormBase {
 
   protected $hacksAPI;
   protected $grintAPI;
+  protected $gcApi;
   /**
    * {@inheritdoc}
    */
@@ -21,16 +22,22 @@ class HacksScorecardEnterManualForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, $scorecardID = 0, $UID = 0, $grintRID = null) {
+  public function buildForm(array $form, FormStateInterface $form_state, $scorecardID = 0, $UID = 0, $grintRID = 0, $GCRID = 0) {
 
     $this->hacksAPI = new HacksApi();
 
-    if ($grintRID !== null) {
+    if (!empty($grintRID) && is_numeric($grintRID)) {
       $this->grintAPI = \Drupal::service('grint_api.grint_api_service');
       $scores = $this->grintAPI->getRoundScore($grintRID);
-      $form = $this->hacksAPI->getScorecardFormElements($scorecardID, 1, $scores);
-    } else {
-      $form = $this->hacksAPI->getScorecardFormElements($scorecardID, 1);
+      $form = $this->hacksAPI->getScorecardFormElements($scorecardID, 0, $scores);
+    }
+    elseif (!empty($GCRID) && is_numeric($GCRID)) {
+      $this->gcApi = \Drupal::service('gc_api.golf_canada_api_service');
+      $scores = $this->gcApi->getRoundScore($GCRID);
+      $form = $this->hacksAPI->getScorecardFormElements($scorecardID, 0, $scores);
+    }
+    else {
+      $form = $this->hacksAPI->getScorecardFormElements($scorecardID, 0);
     }
 
 
@@ -63,15 +70,15 @@ class HacksScorecardEnterManualForm extends FormBase {
 
       // Prepare the scores and putts data
       $scores = array_merge($values['front']['score'], $values['back']['score']);
-      $putts = array_merge($values['front']['putts'], $values['back']['putts']);
+      //$putts = array_merge($values['front']['putts'], $values['back']['putts']);
 
       // Format the data for Drupal field
       $formattedScores = array_map(function($item) { return ['value' => $item]; }, $scores);
-      $formattedPutts = array_map(function($item) { return ['value' => $item]; }, $putts);
+      //$formattedPutts = array_map(function($item) { return ['value' => $item]; }, $putts);
 
       // Assign the values to the node fields
       $node->field_18_hole_gross_score = $formattedScores;
-      $node->field_18_hole_putt_score = $formattedPutts;
+      //$node->field_18_hole_putt_score = $formattedPutts;
 
       // Save the node
       $node->save();

@@ -1,0 +1,50 @@
+.custom-bracket {
+  position: relative;
+  padding: 20px;
+}
+
+.bracket-section {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 50px;
+}
+
+.bracket-round {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+}
+
+.bracket-match {
+  border: 1px solid #ccc;
+  padding: 8px;
+  background: #000000;
+  color: white;
+  border-radius: 4px;
+  min-width: 180px;
+  position: relative;
+  z-index: 1;
+}
+
+.bracket-match .team {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 500;
+}
+
+.bracket-lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.bracket-match.blank {
+  visibility: hidden;
+  height: 23px; /* tweak as needed */
+}
+
+#loser-bracket {
+  margin-top: 40px;
+}

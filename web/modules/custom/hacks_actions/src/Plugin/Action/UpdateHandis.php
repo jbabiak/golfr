@@ -18,12 +18,15 @@ use Drupal\user\Entity\User;
  */
 class UpdateHandis extends ActionBase {
   protected $grintAPI;
+  protected $gcApi;
+
 
   /**
    * {@inheritdoc}
    */
   public function execute($object = NULL) {
     $this->grintAPI = \Drupal::service('grint_api.grint_api_service');
+    $this->gcApi = \Drupal::service('gc_api.golf_canada_api_service');
 
 
 
@@ -37,14 +40,30 @@ class UpdateHandis extends ActionBase {
 
     foreach ($users as $user) {
       $grint_ghap = $user->get('field_ghap_id')->value;
+      $gc_index = $user->get('field_gc_id')->value;
       $grint_image_url = $this->grintAPI->getGrintProfileImg($grint_ghap);
       $user->set('field_grint_image_url', 'https://profile.static.thegrint.com/'.$grint_image_url);
 
 
       $grint_user_id = $user->get('field_grint_userid')->value;
       $handicap_index = $this->grintAPI->getHandicapIndex($grint_user_id);
+
+
+      \Drupal::logger('gc_api')->notice('Grint handicap for @email is @handicap', [
+        '@email' => $user->getEmail(),
+        '@handicap' => $handicap_index,
+      ]);
+
+      $gc_handicap_index = $this->gcApi->getHandicapIndex($gc_index);
+      \Drupal::logger('gc_api')->notice('GC handicap for @email is @handicap', [
+        '@email' => $user->getEmail(),
+        '@handicap' => $gc_handicap_index,
+      ]);
+
+
       // Update the handicap index field and save the user account.
       $user->set('field_handicap_index', $handicap_index);
+      $user->set('field_gc_handicap_index', $gc_handicap_index);
       $user->save();
     }
 

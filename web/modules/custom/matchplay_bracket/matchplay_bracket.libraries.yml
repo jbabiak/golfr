@@ -1,0 +1,10 @@
+custom_bracket:
+  version: 1.0.13
+  js:
+    js/custom-bracket.js: {}
+  css:
+    theme:
+      css/custom-bracket.css: {}
+  dependencies:
+    - core/jquery
+    - core/once

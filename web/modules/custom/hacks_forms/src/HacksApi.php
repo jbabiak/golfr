@@ -11,7 +11,7 @@ class HacksApi {
 
   }
 
-  public function getScorecardFormElements($scorecardID, $putting = 1, $scores = null) {
+  public function getScorecardFormElements($scorecardID, $putting = 0, $scores = null) {
 
 
     $score_node = \Drupal\node\Entity\Node::load($scorecardID);
@@ -71,8 +71,12 @@ class HacksApi {
     for ($i = 1; $i < 10; $i++) {
       $holeNumber++;
 
-      $default_score = $score_node->get('field_18_hole_gross_score')->getValue() ?? '';
-      $default_putts = $score_node->get('field_18_hole_putt_score')->getValue() ?? '';
+      $default_score = $score_node->get('field_18_hole_gross_score')->getValue() ?? [];
+      $default_putts = $score_node->get('field_18_hole_putt_score')->getValue() ?? [];
+
+      // Pad to ensure 18 holes, even if the field doesn't contain full data
+      $default_score = array_pad($default_score, 18, ['value' => '']);
+      $default_putts = array_pad($default_putts, 18, ['value' => '']);
 
       // Check if there is data in $scores for this hole, if not use the default
       $hole_score = isset($scores[$holeNumber]['score']) ? $scores[$holeNumber]['score'] : $default_score[$holeNumber - 1]['value'];
@@ -164,8 +168,12 @@ class HacksApi {
       ];
       $holeNumber++;
 
-      $default_score = $score_node->get('field_18_hole_gross_score')->getValue() ?? '';
-      $default_putts = $score_node->get('field_18_hole_putt_score')->getValue() ?? '';
+      $default_score = $score_node->get('field_18_hole_gross_score')->getValue() ?? [];
+      $default_putts = $score_node->get('field_18_hole_putt_score')->getValue() ?? [];
+
+      // Pad to ensure 18 holes, even if the field doesn't contain full data
+      $default_score = array_pad($default_score, 18, ['value' => '']);
+      $default_putts = array_pad($default_putts, 18, ['value' => '']);
 
       // Check if there is data in $scores for this hole, if not use the default
       $hole_score = isset($scores[$holeNumber]['score']) ? $scores[$holeNumber]['score'] : $default_score[$holeNumber - 1]['value'];
@@ -234,9 +242,11 @@ class HacksApi {
     //$course_handicap
     $grossScore = 0;
     $totalPutts = 0;
-    foreach ($scores as $hole => $data) {
-      $grossScore += $data['score'];
-      $totalPutts += $data['putts']; // Ensure 'putts' exists in your data
+    if (!empty($scores) && is_array($scores)) {
+      foreach ($scores as $hole => $data) {
+        $grossScore += isset($data['score']) ? (int) $data['score'] : 0;
+        $totalPutts += isset($data['putts']) ? (int) $data['putts'] : 0;
+      }
     }
     $netScore = $grossScore - $course_handicap;
 

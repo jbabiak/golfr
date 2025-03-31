@@ -88,6 +88,8 @@
         "drupal/miniorange_oauth_client": "^4.0",
         "drupal/pathauto": "^1.12",
         "drupal/verf": "^2.0",
+        "drupal/views_delimited_list": "2.x-dev@dev",
+        "drupal/views_field_view": "^1.0@beta",
         "drupal/views_selective_filters": "^2.0@alpha",
         "drush/drush": "^11"
     },

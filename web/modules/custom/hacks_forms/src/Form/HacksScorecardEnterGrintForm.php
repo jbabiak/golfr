@@ -62,7 +62,7 @@ class HacksScorecardEnterGrintForm extends FormBase {
     // Add a single submit button for the form
     $form['submit'] = [
       '#type' => 'submit',
-      '#value' => t('Submit Selected Round'),
+      '#value' => t('Continue'),
       '#attributes' => ['class' => ['form-submit-button']],
       // The submit handler will process the selected round
       '#submit' => ['::submitForm'],
@@ -85,7 +85,8 @@ class HacksScorecardEnterGrintForm extends FormBase {
       [
         'scorecardID' => $scorecardID,
         'UID' => $UID,
-        'grintRID' => $roundId
+        'grintRID' => $roundId, // Still using this key unless you want to rename it
+        'GCRID' => 0, // Still using this key unless you want to rename it
       ]
     );
   }

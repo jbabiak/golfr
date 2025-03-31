@@ -1,0 +1,310 @@
+<?php
+
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\node\Entity\Node;
+use Drupal\user\Entity\User;
+
+/**
+ * Implements hook_entity_presave().
+ */
+function matchplay_bracket_entity_presave(EntityInterface $entity) {
+  if (
+    $entity instanceof \Drupal\node\NodeInterface &&
+    $entity->bundle() === 'matchplay_season'
+  ) {
+    $should_recreate = (bool) $entity->get('field__re_create_season')->value;
+    $should_randomize = (bool) $entity->get('field_randomize_matches')->value;
+
+    if (!$should_recreate) {
+      return;
+    }
+
+    // 💣 Delete existing matches
+    $existing = $entity->get('field_matches')->referencedEntities();
+    foreach ($existing as $match) {
+      $match->delete();
+    }
+
+    // 🧑‍🤝‍🧑 Load players
+    $uids = array_column($entity->get('field_players')->getValue(), 'target_id');
+    if (count($uids) < 2) {
+      return;
+    }
+
+    if ($should_randomize) {
+      shuffle($uids);
+    }
+
+    $total_players = count($uids);
+    $bracket_size = pow(2, ceil(log($total_players, 2)));
+    $num_byes = $bracket_size - $total_players;
+
+    $match_ids = [];
+    $round1_matches = [];
+    $bye_players = [];
+
+    $round1_pair_count = ($total_players - $num_byes);
+    $round1_players = array_slice($uids, 0, $round1_pair_count);
+    $bye_players = array_slice($uids, $round1_pair_count);
+
+    for ($i = 0; $i < count($round1_players); $i += 2) {
+      $team1_uid = $round1_players[$i];
+      $team2_uid = $round1_players[$i + 1] ?? null;
+
+      $name1 = matchplay_bracket_get_user_name_by_id($team1_uid);
+      $name2 = $team2_uid ? matchplay_bracket_get_user_name_by_id($team2_uid) : 'BYE';
+
+      $fields = [
+        'type' => 'matchplay_match',
+        'field_round_number' => 1,
+        'title' => "Round 1: {$name1} vs {$name2}",
+        'status' => 1,
+        'field_team_1_players' => [['target_id' => $team1_uid]],
+      ];
+      if ($team2_uid) {
+        $fields['field_team_2_players'][] = ['target_id' => $team2_uid];
+      } else {
+        $fields['field_winning_players'][] = ['target_id' => $team1_uid];
+      }
+
+      $match = Node::create($fields);
+      $match->save();
+      $match_ids[] = ['target_id' => $match->id()];
+      $round1_matches[] = $match;
+    }
+
+    $round2_matches = [];
+    $round = 2;
+    $next_round_matches = [];
+    $round1_index = 0;
+    $bye_index = 0;
+    $bye_count = count($bye_players);
+    $round1_winner_slots = count($round1_matches);
+    $max_bye_vs_bye_matches = floor(($bye_count - $round1_winner_slots) / 2);
+
+    for ($i = 0; $i < $max_bye_vs_bye_matches; $i++) {
+      $bye1_uid = $bye_players[$bye_index++];
+      $bye2_uid = $bye_players[$bye_index++];
+
+      $name1 = matchplay_bracket_get_user_name_by_id($bye1_uid);
+      $name2 = matchplay_bracket_get_user_name_by_id($bye2_uid);
+
+      $match = Node::create([
+        'type' => 'matchplay_match',
+        'field_round_number' => $round,
+        'title' => "Round 2: {$name1} vs {$name2}",
+        'status' => 1,
+        'field_team_1_players' => [['target_id' => $bye1_uid]],
+        'field_team_2_players' => [['target_id' => $bye2_uid]],
+      ]);
+      $match->save();
+      $match_ids[] = ['target_id' => $match->id()];
+      $round2_matches[] = $match;
+      $next_round_matches[] = $match;
+    }
+
+    while ($bye_index < $bye_count && $round1_index < count($round1_matches)) {
+      $bye_uid = $bye_players[$bye_index++];
+      $round1_match = $round1_matches[$round1_index++];
+      $bye_name = matchplay_bracket_get_user_name_by_id($bye_uid);
+
+      $match = Node::create([
+        'type' => 'matchplay_match',
+        'field_round_number' => $round,
+        'title' => "Round 2: Winner of Match {$round1_match->id()} vs {$bye_name}",
+        'status' => 1,
+        'field_team_2_players' => [['target_id' => $bye_uid]],
+      ]);
+      $match->save();
+      $match_ids[] = ['target_id' => $match->id()];
+      $round2_matches[] = $match;
+      $next_round_matches[] = $match;
+    }
+
+    while ($bye_index < $bye_count) {
+      $bye_uid = $bye_players[$bye_index++];
+      $bye_name = matchplay_bracket_get_user_name_by_id($bye_uid);
+
+      $match = Node::create([
+        'type' => 'matchplay_match',
+        'field_round_number' => $round,
+        'title' => "Round 2: {$bye_name} (BYE)",
+        'status' => 1,
+        'field_team_1_players' => [['target_id' => $bye_uid]],
+        'field_winning_players' => [['target_id' => $bye_uid]],
+      ]);
+      $match->save();
+      $match_ids[] = ['target_id' => $match->id()];
+      $round2_matches[] = $match;
+      $next_round_matches[] = $match;
+    }
+
+    while ($round1_index < count($round1_matches)) {
+      $match1 = $round1_matches[$round1_index++] ?? null;
+      $match2 = $round1_matches[$round1_index++] ?? null;
+
+      $match = Node::create([
+        'type' => 'matchplay_match',
+        'field_round_number' => $round,
+        'title' => "Round 2: Winner of Match {$match1->id()} vs " . ($match2 ? "Winner of Match {$match2->id()}" : 'TBD'),
+        'status' => 1,
+      ]);
+      $match->save();
+      $match_ids[] = ['target_id' => $match->id()];
+      $round2_matches[] = $match;
+      $next_round_matches[] = $match;
+    }
+
+    $all_rounds = [$round1_matches, $round2_matches];
+    while (count($next_round_matches) > 1) {
+      $current_matches = $next_round_matches;
+      $next_round_matches = [];
+      $round++;
+
+      $this_round = [];
+      for ($i = 0; $i < count($current_matches); $i += 2) {
+        $match1 = $current_matches[$i] ?? null;
+        $match2 = $current_matches[$i + 1] ?? null;
+
+        $match = Node::create([
+          'type' => 'matchplay_match',
+          'field_round_number' => $round,
+          'title' => "Round {$round}: Winner of Match {$match1->id()} vs " . ($match2 ? "Winner of Match {$match2->id()}" : 'TBD'),
+          'status' => 1,
+        ]);
+        $match->save();
+        $match_ids[] = ['target_id' => $match->id()];
+        $next_round_matches[] = $match;
+        $this_round[] = $match;
+      }
+
+      $all_rounds[] = $this_round;
+    }
+
+    // 🏁 Grand Final
+    $final = Node::create([
+      'type' => 'matchplay_match',
+      'title' => "Grand Finals",
+      'field_round_number' => 200,
+      'status' => 1,
+    ]);
+    $final->save();
+    $match_ids[] = ['target_id' => $final->id()];
+
+    // 🔗 Winner Bracket Links
+    for ($i = 0; $i < count($all_rounds) - 1; $i++) {
+      $current_round = $all_rounds[$i];
+      $next_round = $all_rounds[$i + 1];
+      $next_match_usage = [];
+
+      foreach ($current_round as $source_match) {
+        foreach ($next_round as $index => $target_match) {
+          $used = $next_match_usage[$index] ?? 0;
+          $has_team1 = !$target_match->get('field_team_1_players')->isEmpty();
+          $has_team2 = !$target_match->get('field_team_2_players')->isEmpty();
+          $empty_slots = 2 - ($has_team1 + $has_team2);
+
+          if ($used < $empty_slots) {
+            $source_match->set('field_winning_match', ['target_id' => $target_match->id()]);
+            $source_match->save();
+            $next_match_usage[$index] = $used + 1;
+            break;
+          }
+        }
+      }
+    }
+
+    $final_winner = end(end($all_rounds));
+
+    // 🔁 Loser Bracket
+    $loser_rounds = [];
+    foreach ($all_rounds as $round_index => $winner_matches) {
+      $this_loser_round = [];
+
+      for ($j = 0; $j < count($winner_matches); $j += 2) {
+        $m1 = $winner_matches[$j];
+        $m2 = $winner_matches[$j + 1] ?? null;
+
+        $title = "Losers R" . ($round_index + 1) . ": Loser of Match {$m1->id()}";
+        if ($m2) {
+          $title .= " vs Loser of Match {$m2->id()}";
+        }
+
+        $match = Node::create([
+          'type' => 'matchplay_match',
+          'field_round_number' => 100 + $round_index + 1,
+          'title' => $title,
+          'status' => 1,
+        ]);
+        $match->save();
+        $match_ids[] = ['target_id' => $match->id()];
+        $this_loser_round[] = $match;
+
+        $m1->set('field_losing_match', ['target_id' => $match->id()]);
+        $m1->save();
+        if ($m2) {
+          $m2->set('field_losing_match', ['target_id' => $match->id()]);
+          $m2->save();
+        }
+      }
+
+      $loser_rounds[] = $this_loser_round;
+    }
+
+    // 🔗 Loser bracket advancing links
+    for ($i = 0; $i < count($loser_rounds) - 1; $i++) {
+      $curr = $loser_rounds[$i];
+      $next = $loser_rounds[$i + 1];
+      $next_match_usage = [];
+
+      foreach ($curr as $match) {
+        foreach ($next as $index => $target) {
+          $used = $next_match_usage[$index] ?? 0;
+          $has_team1 = !$target->get('field_team_1_players')->isEmpty();
+          $has_team2 = !$target->get('field_team_2_players')->isEmpty();
+          $empty_slots = 2 - ($has_team1 + $has_team2);
+
+          if ($used < $empty_slots) {
+            $match->set('field_winning_match', ['target_id' => $target->id()]);
+            $match->save();
+            $next_match_usage[$index] = $used + 1;
+            break;
+          }
+        }
+      }
+    }
+
+    $final_loser = end(end($loser_rounds));
+
+    // Link to grand final
+    $final_winner->set('field_winning_match', ['target_id' => $final->id()]);
+    $final_winner->save();
+    $final_loser->set('field_winning_match', ['target_id' => $final->id()]);
+    $final_loser->save();
+
+    $reset_final = Node::create([
+      'type' => 'matchplay_match',
+      'title' => 'Grand Final Reset (If Needed)',
+      'field_round_number' => 201,
+      'status' => 1,
+    ]);
+    $reset_final->save();
+    $match_ids[] = ['target_id' => $reset_final->id()];
+
+    $final->set('field_losing_match', ['target_id' => $reset_final->id()]);
+    $final->set('field_winning_match', ['target_id' => $reset_final->id()]);
+    $final->save();
+
+    $entity->set('field_matches', $match_ids);
+    $entity->set('field__re_create_season', 0);
+    $entity->set('field_randomize_matches', 0);
+  }
+}
+
+/**
+ * Get display name or field_name for user.
+ */
+function matchplay_bracket_get_user_name_by_id($uid) {
+  $user = User::load($uid);
+  return $user ? ($user->get('field_name')->value ?? $user->getDisplayName()) : 'TBD';
+}

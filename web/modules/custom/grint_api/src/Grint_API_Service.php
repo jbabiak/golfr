@@ -15,7 +15,7 @@ use GuzzleHttp\Exception\RequestException;
 
 
 class Grint_API_Service {
-
+  protected $client;
   protected ConfigFactoryInterface $configFactory;
   protected \Drupal\Core\Logger\LoggerChannelInterface $logger;
   protected ClientInterface $httpClient;

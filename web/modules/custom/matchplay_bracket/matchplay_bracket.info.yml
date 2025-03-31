@@ -1,0 +1,5 @@
+name: 'Matchplay Bracket'
+type: module
+description: 'Displays a matchplay bracket using jQuery Bracket.'
+core_version_requirement: ^10
+package: Custom

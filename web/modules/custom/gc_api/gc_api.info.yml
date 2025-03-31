@@ -1,0 +1,5 @@
+name: 'Golf Canada API'
+type: module
+description: 'Handles connection and authentication with Golf Canada API.'
+core_version_requirement: ^10
+package: Custom

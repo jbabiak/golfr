@@ -21,11 +21,19 @@ hacks_forms.scorecard_enter_grint_form:
     _title: 'Enter Scorecard from TheGrint'
   requirements:
     _permission: 'access content'
+hacks_forms.scorecard_enter_gc_form:
+  path: '/hacks-forms/scorecard-enter-gc/{scorecardID}/{UID}/{GCID}'
+  defaults:
+    _form: '\Drupal\hacks_forms\Form\HacksScorecardEnterGCForm'
+    _title: 'Enter Scorecard from Golf Canada'
+  requirements:
+    _permission: 'access content'
 hacks_forms.scorecard_enter_manual_form:
-  path: '/hacks-forms/scorecard-enter-manual/{scorecardID}/{UID}/{grintRID}'
+  path: '/hacks-forms/scorecard-enter-manual/{scorecardID}/{UID}/{grintRID}/{GCRID}'
   defaults:
     _form: '\Drupal\hacks_forms\Form\HacksScorecardEnterManualForm'
     _title: 'Enter Scorecard'
-    grintRID: NULL
+    grintRID: 0
+    GCRID: 0
   requirements:
     _permission: 'access content'

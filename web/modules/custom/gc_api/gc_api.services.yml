@@ -1,0 +1,4 @@
+services:
+  gc_api.golf_canada_api_service:
+    class: Drupal\gc_api\Service\GolfCanadaApiService
+    arguments: ['@http_client', '@state', '@settings']
