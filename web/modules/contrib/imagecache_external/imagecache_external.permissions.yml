@@ -1,4 +1,0 @@
-administer imagecache external:
-  title: 'Administer Imagecache External'
-  description: 'Change the Imagecache External settings.'
-  restrict access: TRUE

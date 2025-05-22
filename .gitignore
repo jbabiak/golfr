@@ -61,3 +61,11 @@
 /drush
 /drupal.phar
 /drupal
+
+composer.lock
+
+/web/modules/contrib/
+/web/themes/contrib/
+
+web/themes/custom/hacksgolf_bootstrap_sass/node_modules/
+web/themes/custom/hacksgolf_bootstrap_sass/package-lock.json
