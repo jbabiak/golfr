@@ -194,9 +194,9 @@ class GolfCanadaApiService {
 
       $data = json_decode($response->getBody(), TRUE);
 
-      \Drupal::logger('gc_api')->debug('GC API Response: @data', [
-        '@data' => json_encode($data),
-      ]);
+//      \Drupal::logger('gc_api')->debug('GC API Response: @data', [
+//        '@data' => json_encode($data),
+//      ]);
 
       if (!isset($data['holeScores']) || !is_array($data['holeScores'])) {
         \Drupal::logger('gc_api')->warning('No hole scores found in GC response.');
@@ -230,5 +230,78 @@ class GolfCanadaApiService {
       return [];
     }
   }
+
+
+  public function getCourseHandicap($user_id, $course_id, $sub_course_id, $tee_color) {
+    $gcApi = \Drupal::service('gc_api.golf_canada_api_service');
+
+    $token = $gcApi->getValidToken();
+    if (!$token) {
+      \Drupal::logger('gc_api')->error('Unable to fetch valid token for getCourseHandicap().');
+      return 0;
+    }
+
+    $url = 'https://scg.golfcanada.ca/api/courses/getCourseHandicapInfo?facilityId=' . $course_id . '&handicapPercent=100&individualId=' . $user_id;
+
+    try {
+      $client = \Drupal::httpClient();
+      $response = $client->get($url, [
+        'headers' => [
+          'Authorization' => 'Bearer ' . $token,
+          'Accept' => 'application/json',
+        ],
+        'verify' => FALSE, // ⚠️ Disable in dev only
+      ]);
+
+      $data = json_decode($response->getBody(), TRUE);
+
+      if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+        \Drupal::logger('gc_api')->error('Invalid JSON response from GC API: @error', [
+          '@error' => json_last_error_msg(),
+        ]);
+        return 0;
+      }
+
+      \Drupal::logger('gc_api')->debug('GC API Response: @data', [
+        '@data' => json_encode($data),
+      ]);
+
+      if (!isset($data['facility']['courses']) || !is_array($data['facility']['courses'])) {
+        \Drupal::logger('gc_api')->error('Missing or invalid "courses" data in GC API response.');
+        return 0;
+      }
+
+      foreach ($data['facility']['courses'] as $course) {
+        if ((int) $course['id'] === (int) $sub_course_id && isset($course['tees']) && is_array($course['tees'])) {
+          foreach ($course['tees'] as $tee) {
+            if (isset($tee['name']) && stripos($tee['name'], $tee_color) !== false) {
+              \Drupal::logger('gc_api')->debug('Found matching tee: @tee_name with playing handicap: @hcp', [
+                '@tee_name' => $tee['name'],
+                '@hcp' => $tee['playingHandicap'] ?? 'N/A',
+              ]);
+              return $tee['playingHandicap'] ?? 0;
+            }
+          }
+          \Drupal::logger('gc_api')->warning('No matching tee found with color "@color" in course ID @sub_id.', [
+            '@color' => $tee_color,
+            '@sub_id' => $sub_course_id,
+          ]);
+          return 0;
+        }
+      }
+
+      \Drupal::logger('gc_api')->warning('Course ID @sub_id not found in facility.', [
+        '@sub_id' => $sub_course_id,
+      ]);
+      return 0;
+
+    } catch (\Exception $e) {
+      \Drupal::logger('gc_api')->error('Error fetching course handicap data: @msg', [
+        '@msg' => $e->getMessage(),
+      ]);
+      return 0;
+    }
+  }
+
 
 }

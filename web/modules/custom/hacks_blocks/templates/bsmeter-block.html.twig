@@ -36,13 +36,14 @@
             {% set probability = 1 / odds %}
             {% set perc = probability * 100 %}
             {% set rounded = perc|number_format(4) %}
-
+{#
             <ul>
               <li>The Odds of this round happening are <strong>{{ odds|number_format(0, '.', ',') }}:1</strong> or <strong>({{ rounded }}%)</strong></li>
               <li><strong>{{handicapDifferential|number_format(2)}}</strong> = ({{grossScore}} – {{courseRating}}) * (113/{{courseSlope}}) - {{handicapIndex}}</li>
               <li>Net Differential  = (Gross Score - Course Rating) * 113 / Course Slope - Handicap Index</small></li>
               <li><a href="{{ linktoCourse }}">Link to Golf Course</a></li>
            </ul>
+         #}
         </div>
     </div>
 </div>

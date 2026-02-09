@@ -52,12 +52,20 @@ class Grint_API_Service {
     $uri = '/user/get_handicap_info/';
     $payload = ['user_id' => $grint_user_id];
     $index = $this->postRequest($uri, $payload);
-    if (strpos($index->index_ghap, '+') === 0) {
+
+    $clean = trim($index->index_ghap, "~");
+
+    // Match the first number: integer or float
+    if (preg_match('/\d+(\.\d+)?/', $clean, $matches)) {
+      $index_ghap = (float) $matches[0];
+    }
+
+    if (strpos($index_ghap, '+') === 0) {
       // Remove the '+' and convert to decimal
-      $hdcp = -floatval(substr($index->index_ghap, 1));
+      $hdcp = -floatval(substr($index_ghap, 1));
     } else {
       // Convert to decimal and make it negative
-      $hdcp = floatval($index->index_ghap);
+      $hdcp = floatval($index_ghap);
     }
     return $hdcp;
   }
@@ -175,6 +183,16 @@ class Grint_API_Service {
       'provider' => 7, //7 = ghap, 3 = whs
     ];
     return $this->postRequest($uri, $payload);
+  }
+
+  public function getCourseHandicapManual($handicapIndex, $slopeRating) {
+    $courseHandicap = $handicapIndex * ($slopeRating / 113);
+    return round($courseHandicap);
+  }
+
+  public function getCourseHandicapWHS($handicap_index,$slope_rating,$course_rating, $par): int {
+    $course_handicap = ($handicap_index * ($slope_rating / 113)) + ($course_rating - $par);
+    return (int) round($course_handicap);
   }
 
   public function getRoundScore($roundId = 0) {

@@ -22,15 +22,7 @@ function hacks_forms_form_user_pass_reset_alter(&$form, \Drupal\Core\Form\FormSt
 }
 
 function hacks_forms_form_user_login_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
-  dpm($form, 'form');
-  dpm($form_state, 'formstate');
-  // Remove username field.
   unset($form['name']);
-  $serializedString = serialize($form);
-  $string =  "<pre>" . print_r(unserialize($serializedString), 1) . "</pre>";
-  \Drupal::logger('hacks_form')->notice($string);
-
-  // Remove password field.
   unset($form['pass']);
   $form['actions']['submit']['#access'] = FALSE;
   $form['oauth_loginurl']['#attributes']['class'][] = 'btn';
@@ -249,5 +241,4 @@ function getNextWeekdayDate($startDate, $selectedWeekday)
   $nextWeekdayDate->setTime(23, 59);
   return $nextWeekdayDate;
 }
-
 

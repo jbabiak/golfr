@@ -105,7 +105,7 @@ class MenNightScoreRoundBlock extends BlockBase implements ContainerFactoryPlugi
           return [
             '#theme' => 'progress_bar',
             '#percent' => round($averagePercentage),
-            '#label' => $roundNode->getTitle().' Average 💪:',
+            '#label' => $roundNode->getTitle().' Field 💪:',
             '#markup' => '<div class="progress">
                                     <div class="progress-bar" role="progressbar" style="width: ' . $averagePercentage . '%" aria-valuenow="' . $averagePercentage . '" aria-valuemin="0" aria-valuemax="100" style="background-color: ' . $color . ';">' . round($averagePercentage) . '%</div>
                                   </div>',

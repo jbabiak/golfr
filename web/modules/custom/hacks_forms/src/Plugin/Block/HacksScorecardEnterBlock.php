@@ -74,24 +74,27 @@ class HacksScorecardEnterBlock extends BlockBase implements ContainerFactoryPlug
           if ($is_disabled) {
             $disabled_message = '<small>Score entry has been disabled as the cutoff date has passed.</small>';
           }
-
-          $btn_class = ['use-ajax', 'btn', 'btn-secondary', $disabled_class];
-          $link1 = Link::createFromRoute(
-            $this->t('Enter Scorecard TheGrint'),
-            'hacks_forms.scorecard_enter_grint_form',
-            [
-              'scorecardID' => $node->id(),
-              'UID' => $playerId,
-              'grintUID' => $node->get('field_player')->entity->get('field_grint_userid')->value,
-            ],
-            [
-              'attributes' => [
-                'class' => $btn_class,
-                'data-dialog-type' => 'modal',
-                'data-dialog-options' => Json::encode(['width' => 900]),
+          if ($node->get('field_player')->entity->get('field_grint_userid')->value) {
+            $btn_class = ['use-ajax', 'btn', 'btn-secondary', $disabled_class];
+            $link1 = Link::createFromRoute(
+              $this->t('Enter Scorecard TheGrint'),
+              'hacks_forms.scorecard_enter_grint_form',
+              [
+                'scorecardID' => $node->id(),
+                'UID' => $playerId,
+                'grintUID' => $node->get('field_player')->entity->get('field_grint_userid')->value,
+              ],
+              [
+                'attributes' => [
+                  'class' => $btn_class,
+                  'data-dialog-type' => 'modal',
+                  'data-dialog-options' => Json::encode(['width' => 900]),
+                ]
               ]
-            ]
-          )->toString();
+            )->toString();
+          } else {
+            $link1 = '';
+          }
 
           $btn_class = ['btn', 'btn-warning', $disabled_class];
           $link2 = Link::createFromRoute(
@@ -108,24 +111,28 @@ class HacksScorecardEnterBlock extends BlockBase implements ContainerFactoryPlug
             ]
           )->toString();
 
-          $btn_class = ['use-ajax', 'btn', 'btn-danger', $disabled_class];
-          $link3 = Link::createFromRoute(
-            $this->t('Enter Scorecard Golf Canada'),
-            'hacks_forms.scorecard_enter_gc_form',
-            [
-              'scorecardID' => $node->id(),
-              'UID' => $playerId,
-              'GCID' => $node->get('field_player')->entity->get('field_gc_id')->value,
+          if ($node->get('field_player')->entity->get('field_gc_id')->value) {
+            $btn_class = ['use-ajax', 'btn', 'btn-danger', $disabled_class];
+            $link3 = Link::createFromRoute(
+              $this->t('Enter Scorecard Golf Canada'),
+              'hacks_forms.scorecard_enter_gc_form',
+              [
+                'scorecardID' => $node->id(),
+                'UID' => $playerId,
+                'GCID' => $node->get('field_player')->entity->get('field_gc_id')->value,
 
-            ],
-            [
-              'attributes' => [
-                'class' => $btn_class,
-                'data-dialog-type' => 'modal',
-                'data-dialog-options' => Json::encode(['width' => 900]),
+              ],
+              [
+                'attributes' => [
+                  'class' => $btn_class,
+                  'data-dialog-type' => 'modal',
+                  'data-dialog-options' => Json::encode(['width' => 900]),
+                ]
               ]
-            ]
-          )->toString();
+            )->toString();
+          } else {
+            $link3 = '';
+          }
 
           $markup = $disabled_message . '<p class="my-3">' . $link1 . '</p><p>' . $link3 . '</p><p>' . $link2 . '</p>';
         }
