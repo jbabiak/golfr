@@ -63,6 +63,7 @@
 /drupal
 
 
+
 composer.lock
 
 /web/modules/contrib/
@@ -71,3 +72,6 @@ composer.lock
 web/themes/custom/hacksgolf_bootstrap_sass/node_modules/
 web/themes/custom/hacksgolf_bootstrap_sass/package-lock.json
 
+
+web/themes/custom/hacksgolf_bootstrap_sass/node_modules/
+web/themes/custom/hacksgolf_bootstrap_sass/package-lock.json
