@@ -94,7 +94,7 @@
         "drupal/views_delimited_list": "2.x-dev@dev",
         "drupal/views_field_view": "^1.0@beta",
         "drupal/views_selective_filters": "^2.0@alpha",
-        "drush/drush": "^12.4",
+        "drush/drush": "^12.4"
     },
     "conflict": {
         "drupal/drupal": "*"

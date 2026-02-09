@@ -32,8 +32,9 @@ regions:
   footer_third: 'Footer third'
   footer_fourth: 'Footer fourth'
   footer_fifth: 'Footer fifth'
+  none: None
 
-# Information added by Drupal.org packaging script on 2024-08-04
-version: '5.0.11'
+# Information added by Drupal.org packaging script on 2025-06-10
+version: '5.0.12'
 project: 'bootstrap_sass'
-datestamp: 1722796879
+datestamp: 1749521567
