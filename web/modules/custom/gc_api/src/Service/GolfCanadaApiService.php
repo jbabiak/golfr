@@ -1,4 +1,5 @@
 <?php
+
 namespace Drupal\gc_api\Service;
 
 use GuzzleHttp\ClientInterface;
@@ -43,7 +44,6 @@ class GolfCanadaApiService {
   public function authenticate() {
     $credentials = $this->settings->get('gc_api.credentials');
 
-
     if (!$credentials || empty($credentials['username']) || empty($credentials['password'])) {
       \Drupal::logger('gc_api')->error('GC API credentials not set.');
       return NULL;
@@ -60,7 +60,7 @@ class GolfCanadaApiService {
         'headers' => [
           'Content-Type' => 'application/x-www-form-urlencoded',
         ],
-        'verify' => FALSE, // <-- disables SSL cert check
+        'verify' => FALSE, // dev only
       ]);
 
       $data = json_decode($response->getBody(), TRUE);
@@ -72,8 +72,8 @@ class GolfCanadaApiService {
 
         return $data['access_token'];
       }
-
-    } catch (\Exception $e) {
+    }
+    catch (\Exception $e) {
       \Drupal::logger('gc_api')->error('Auth error: @message', ['@message' => $e->getMessage()]);
     }
 
@@ -90,7 +90,6 @@ class GolfCanadaApiService {
     }
 
     $token = $this->getValidToken();
-
     if (!$token) {
       \Drupal::logger('gc_api')->error('No valid token for fetching handicap index.');
       return NULL;
@@ -104,7 +103,7 @@ class GolfCanadaApiService {
           'Authorization' => 'Bearer ' . $token,
           'Accept' => 'application/json',
         ],
-        'verify' => FALSE, // 👈 Add this line
+        'verify' => FALSE, // dev only
       ]);
 
       $data = json_decode($response->getBody(), TRUE);
@@ -114,9 +113,8 @@ class GolfCanadaApiService {
       }
 
       return NULL;
-
-
-    } catch (\Exception $e) {
+    }
+    catch (\Exception $e) {
       \Drupal::logger('gc_api')->error('Handicap fetch error: @message', ['@message' => $e->getMessage()]);
       return NULL;
     }
@@ -129,7 +127,6 @@ class GolfCanadaApiService {
     }
 
     $token = $this->getValidToken();
-
     if (!$token) {
       \Drupal::logger('gc_api')->error('No valid token for fetching score history.');
       return NULL;
@@ -149,15 +146,13 @@ class GolfCanadaApiService {
           'Authorization' => 'Bearer ' . $token,
           'Accept' => 'application/json',
         ],
-        'verify' => FALSE, // ⚠️ Dev only! Remove or conditionally control in prod
+        'verify' => FALSE, // dev only
       ]);
 
       $data = json_decode($response->getBody(), TRUE);
-
-      // Return just the history array
       return $data['data'] ?? [];
-
-    } catch (\Exception $e) {
+    }
+    catch (\Exception $e) {
       \Drupal::logger('gc_api')->error('Score history fetch error: @message', [
         '@message' => $e->getMessage(),
       ]);
@@ -171,10 +166,7 @@ class GolfCanadaApiService {
       return [];
     }
 
-    // Get the GC API service
-    $gcApi = \Drupal::service('gc_api.golf_canada_api_service');
-
-    $token = $gcApi->getValidToken();
+    $token = $this->getValidToken();
     if (!$token) {
       \Drupal::logger('gc_api')->error('Unable to fetch valid token for getRoundScore().');
       return [];
@@ -189,41 +181,34 @@ class GolfCanadaApiService {
           'Authorization' => 'Bearer ' . $token,
           'Accept' => 'application/json',
         ],
-        'verify' => FALSE, // ⚠️ Disable in dev only
+        'verify' => FALSE, // dev only
       ]);
 
       $data = json_decode($response->getBody(), TRUE);
-
-//      \Drupal::logger('gc_api')->debug('GC API Response: @data', [
-//        '@data' => json_encode($data),
-//      ]);
 
       if (!isset($data['holeScores']) || !is_array($data['holeScores'])) {
         \Drupal::logger('gc_api')->warning('No hole scores found in GC response.');
         return [];
       }
 
-      // Build scores array
       $scores = [];
       foreach ($data['holeScores'] as $holeData) {
         $holeRaw = $holeData['holeNumber'];
 
-        // Only include true integers between 1 and 18
         if (is_numeric($holeRaw) && floor($holeRaw) == $holeRaw && $holeRaw >= 1 && $holeRaw <= 18) {
           $hole = (int) $holeRaw;
 
           $scores[$hole] = [
             'hole' => $hole,
             'score' => $holeData['gross'] ?? '',
-            'putts' => $holeData['putts'] ?? '', // nulls are okay
+            'putts' => $holeData['putts'] ?? '',
           ];
         }
       }
 
-
       return $scores;
-
-    } catch (\Exception $e) {
+    }
+    catch (\Exception $e) {
       \Drupal::logger('gc_api')->error('Error fetching score details: @msg', [
         '@msg' => $e->getMessage(),
       ]);
@@ -231,11 +216,8 @@ class GolfCanadaApiService {
     }
   }
 
-
   public function getCourseHandicap($user_id, $course_id, $sub_course_id, $tee_color) {
-    $gcApi = \Drupal::service('gc_api.golf_canada_api_service');
-
-    $token = $gcApi->getValidToken();
+    $token = $this->getValidToken();
     if (!$token) {
       \Drupal::logger('gc_api')->error('Unable to fetch valid token for getCourseHandicap().');
       return 0;
@@ -250,7 +232,7 @@ class GolfCanadaApiService {
           'Authorization' => 'Bearer ' . $token,
           'Accept' => 'application/json',
         ],
-        'verify' => FALSE, // ⚠️ Disable in dev only
+        'verify' => FALSE, // dev only
       ]);
 
       $data = json_decode($response->getBody(), TRUE);
@@ -262,10 +244,6 @@ class GolfCanadaApiService {
         return 0;
       }
 
-      \Drupal::logger('gc_api')->debug('GC API Response: @data', [
-        '@data' => json_encode($data),
-      ]);
-
       if (!isset($data['facility']['courses']) || !is_array($data['facility']['courses'])) {
         \Drupal::logger('gc_api')->error('Missing or invalid "courses" data in GC API response.');
         return 0;
@@ -275,27 +253,16 @@ class GolfCanadaApiService {
         if ((int) $course['id'] === (int) $sub_course_id && isset($course['tees']) && is_array($course['tees'])) {
           foreach ($course['tees'] as $tee) {
             if (isset($tee['name']) && stripos($tee['name'], $tee_color) !== false) {
-              \Drupal::logger('gc_api')->debug('Found matching tee: @tee_name with playing handicap: @hcp', [
-                '@tee_name' => $tee['name'],
-                '@hcp' => $tee['playingHandicap'] ?? 'N/A',
-              ]);
               return $tee['playingHandicap'] ?? 0;
             }
           }
-          \Drupal::logger('gc_api')->warning('No matching tee found with color "@color" in course ID @sub_id.', [
-            '@color' => $tee_color,
-            '@sub_id' => $sub_course_id,
-          ]);
           return 0;
         }
       }
 
-      \Drupal::logger('gc_api')->warning('Course ID @sub_id not found in facility.', [
-        '@sub_id' => $sub_course_id,
-      ]);
       return 0;
-
-    } catch (\Exception $e) {
+    }
+    catch (\Exception $e) {
       \Drupal::logger('gc_api')->error('Error fetching course handicap data: @msg', [
         '@msg' => $e->getMessage(),
       ]);
@@ -303,5 +270,282 @@ class GolfCanadaApiService {
     }
   }
 
+  /**
+   * Search facilities (clubs).
+   */
+  public function searchFacilities(string $text, int $top = 10, string $nationalAssociation = 'RCGA'): array {
+    $text = trim($text);
+    if ($text === '') {
+      return [];
+    }
+
+    $token = $this->getValidToken();
+    if (!$token) {
+      \Drupal::logger('gc_api')->error('No valid token for searchFacilities().');
+      return [];
+    }
+
+    $url = 'https://scg.golfcanada.ca/api/facilities/search?' . http_build_query([
+        '$top' => $top,
+        'nationalAssociation' => $nationalAssociation,
+        'text' => $text,
+      ]);
+
+    try {
+      $response = $this->httpClient->get($url, [
+        'headers' => [
+          'Authorization' => 'Bearer ' . $token,
+          'Accept' => 'application/json',
+        ],
+        'verify' => FALSE, // dev only
+      ]);
+
+      $data = json_decode((string) $response->getBody(), TRUE);
+      $facilities = $data['facilities'] ?? [];
+
+      if (!is_array($facilities)) {
+        return [];
+      }
+
+      $out = [];
+      foreach ($facilities as $f) {
+        if (!empty($f['id']) && !empty($f['name'])) {
+          $out[] = [
+            'id' => (int) $f['id'],
+            'name' => (string) $f['name'],
+            'city' => (string) ($f['city'] ?? ''),
+            'region' => (string) ($f['region'] ?? ''),
+          ];
+        }
+      }
+
+      return $out;
+    }
+    catch (\Throwable $e) {
+      \Drupal::logger('gc_api')->notice('searchFacilities() failed: @msg', ['@msg' => $e->getMessage()]);
+      return [];
+    }
+  }
+
+  /**
+   * Get courses for a facility + memberId (GC id).
+   *
+   * IMPORTANT: This preserves tee hole data from GC:
+   * tee['holes'][] includes number/par/yards/handicap (plus other fields).
+   */
+  public function getCourses(int $facilityId, int $memberId): array {
+    if ($facilityId <= 0 || $memberId <= 0) {
+      return [];
+    }
+
+    $token = $this->getValidToken();
+    if (!$token) {
+      \Drupal::logger('gc_api')->error('No valid token for getCourses().');
+      return [];
+    }
+
+    $url = 'https://scg.golfcanada.ca/api/courses/getCourses?' . http_build_query([
+        'facilityId' => $facilityId,
+        'memberId' => $memberId,
+      ]);
+
+    try {
+      $response = $this->httpClient->get($url, [
+        'headers' => [
+          'Authorization' => 'Bearer ' . $token,
+          'Accept' => 'application/json',
+        ],
+        'verify' => FALSE, // dev only
+      ]);
+
+      $data = json_decode((string) $response->getBody(), TRUE);
+      if (!is_array($data)) {
+        return [];
+      }
+
+      $out = [];
+      foreach ($data as $course) {
+        if (empty($course['id']) || empty($course['name'])) {
+          continue;
+        }
+
+        $teesOut = [];
+        if (!empty($course['tees']) && is_array($course['tees'])) {
+          foreach ($course['tees'] as $tee) {
+            if (empty($tee['id']) || empty($tee['name'])) {
+              continue;
+            }
+
+            $holes = [];
+            if (!empty($tee['holes']) && is_array($tee['holes'])) {
+              $holes = $tee['holes'];
+            }
+
+            $teesOut[] = [
+              'id' => (int) $tee['id'],
+              'name' => (string) $tee['name'],
+              'holes' => $holes,
+              'frontRating' => $tee['frontRating'] ?? NULL,
+              'backRating' => $tee['backRating'] ?? NULL,
+              'rating' => $tee['rating'] ?? NULL,
+              'frontSlope' => $tee['frontSlope'] ?? NULL,
+              'backSlope' => $tee['backSlope'] ?? NULL,
+              'slope' => $tee['slope'] ?? NULL,
+            ];
+          }
+        }
+
+        $out[] = [
+          'id' => (int) $course['id'],
+          'name' => (string) $course['name'],
+          'courseStatus' => (string) ($course['courseStatus'] ?? ''),
+          'tees' => $teesOut,
+        ];
+      }
+
+      return $out;
+    }
+    catch (\Throwable $e) {
+      \Drupal::logger('gc_api')->notice('getCourses() failed: @msg', ['@msg' => $e->getMessage()]);
+      return [];
+    }
+  }
+
+  /**
+   * Helper: Return hole map (1..18) for a specific facility/course/tee selection.
+   */
+  public function getTeeHoles(int $facilityId, int $memberId, int $courseId, int $teeId): array {
+    $courses = $this->getCourses($facilityId, $memberId);
+    if (empty($courses)) {
+      return [];
+    }
+
+    $holeMap = [];
+
+    foreach ($courses as $c) {
+      if ((int) ($c['id'] ?? 0) !== $courseId) {
+        continue;
+      }
+
+      $tees = $c['tees'] ?? [];
+      if (!is_array($tees)) {
+        return [];
+      }
+
+      foreach ($tees as $t) {
+        if ((int) ($t['id'] ?? 0) !== $teeId) {
+          continue;
+        }
+
+        $holes = $t['holes'] ?? [];
+        if (!is_array($holes)) {
+          return [];
+        }
+
+        foreach ($holes as $h) {
+          $numRaw = $h['number'] ?? NULL;
+
+          // Only keep true integer holes 1..18 (filters 9.1, 18.2 etc)
+          if (is_numeric($numRaw) && floor((float) $numRaw) == (float) $numRaw) {
+            $num = (int) $numRaw;
+            if ($num >= 1 && $num <= 18) {
+              $holeMap[$num] = [
+                'yards' => isset($h['yards']) && is_numeric($h['yards']) ? (int) $h['yards'] : NULL,
+                'par' => isset($h['par']) && is_numeric($h['par']) ? (int) $h['par'] : NULL,
+                'handicap' => isset($h['handicap']) && is_numeric($h['handicap']) ? (int) $h['handicap'] : NULL,
+              ];
+            }
+          }
+        }
+
+        ksort($holeMap);
+        return $holeMap;
+      }
+
+      return [];
+    }
+
+    return [];
+  }
+
+  /**
+   * POST a score payload to Golf Canada.
+   *
+   * Default endpoint used here:
+   *   https://scg.golfcanada.ca/api/scores/postScore
+   *
+   * You can override by setting:
+   *   $settings['gc_api']['endpoints']['post_score']
+   */
+  public function postScore(array $payload): array {
+    $token = $this->getValidToken();
+    if (!$token) {
+      \Drupal::logger('gc_api')->error('No valid token for postScore().');
+      return [
+        'ok' => FALSE,
+        'status' => 0,
+        'error' => 'No valid token',
+        'response' => NULL,
+      ];
+    }
+
+    $endpoint = 'https://scg.golfcanada.ca/api/scores/postScore';
+    try {
+      $custom = $this->settings->get('gc_api.endpoints');
+      if (is_array($custom) && !empty($custom['post_score'])) {
+        $endpoint = (string) $custom['post_score'];
+      }
+      // Also support nested style if you prefer:
+      // $settings['gc_api']['endpoints']['post_score']
+      $custom2 = $this->settings->get('gc_api');
+      if (is_array($custom2) && !empty($custom2['endpoints']['post_score'])) {
+        $endpoint = (string) $custom2['endpoints']['post_score'];
+      }
+    }
+    catch (\Throwable $e) {
+      // Ignore; keep default endpoint.
+    }
+
+    try {
+      $resp = $this->httpClient->post($endpoint, [
+        'headers' => [
+          'Authorization' => 'Bearer ' . $token,
+          'Accept' => 'application/json',
+          'Content-Type' => 'application/json',
+        ],
+        'json' => $payload,
+        'verify' => FALSE, // dev only
+      ]);
+
+      $status = (int) $resp->getStatusCode();
+      $body = (string) $resp->getBody();
+      $decoded = json_decode($body, TRUE);
+
+      \Drupal::logger('gc_api')->notice('postScore() status=@s endpoint=@u', [
+        '@s' => $status,
+        '@u' => $endpoint,
+      ]);
+
+      return [
+        'ok' => ($status >= 200 && $status < 300),
+        'status' => $status,
+        'error' => NULL,
+        'response' => $decoded !== NULL ? $decoded : $body,
+      ];
+    }
+    catch (\Throwable $e) {
+      \Drupal::logger('gc_api')->error('postScore() failed: @msg endpoint=@u', [
+        '@msg' => $e->getMessage(),
+        '@u' => $endpoint,
+      ]);
+
+      return [
+        'ok' => FALSE,
+        'status' => 0,
+        'error' => $e->getMessage(),
+        'response' => NULL,
+      ];
+    }
+  }
 
 }

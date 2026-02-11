@@ -1,0 +1,7 @@
+gc_upload.start:
+  path: '/gc-upload'
+  defaults:
+    _form: '\Drupal\gc_upload\Form\GcUploadStartForm'
+    _title: 'Upload Scorecard'
+  requirements:
+    _permission: 'access content'

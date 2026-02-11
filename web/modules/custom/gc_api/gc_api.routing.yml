@@ -1,0 +1,7 @@
+gc_api.facility_autocomplete:
+  path: '/gc-api/autocomplete/facility'
+  defaults:
+    _controller: '\Drupal\gc_api\Controller\GcApiAutocompleteController::facility'
+  requirements:
+    _permission: 'access content'
+

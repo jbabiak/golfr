@@ -1,0 +1,7 @@
+name: GC Upload
+type: module
+description: AJAX loader form to select Grint round by date and continue scorecard flow.
+core_version_requirement: ^10 || ^11
+package: Custom
+dependencies:
+  - drupal:user

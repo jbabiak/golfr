@@ -1,0 +1,13 @@
+/* Keep scorecard styling isolated to gc_upload scorecard container */
+.gc-upload-scorecard .scorecard-table-input {
+  width: 100%;
+}
+
+.gc-upload-scores-info span {
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.gc-upload-loaded {
+  margin: 10px 0;
+}

@@ -1,0 +1,7 @@
+services:
+  gc_upload.scorecard_builder:
+    class: Drupal\gc_upload\Service\GcUploadScorecardBuilder
+    arguments: ['@grint_api.grint_api_service', '@logger.factory']
+
+  gc_upload.post_score_payload_builder:
+    class: Drupal\gc_upload\Service\GcUploadPostScorePayloadBuilder

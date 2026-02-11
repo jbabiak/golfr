@@ -1,0 +1,10 @@
+scorecard:
+  version: 1.x
+  css:
+    theme:
+      css/gc-upload-scorecard.css: {}
+  js:
+    js/gc-upload-scorecard.js: {}
+  dependencies:
+    - core/drupal
+    - core/once
