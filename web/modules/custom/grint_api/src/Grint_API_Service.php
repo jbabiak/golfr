@@ -9,10 +9,7 @@ use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\State\StateInterface;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Cookie\CookieJar;
 use Drupal\Core\Site\Settings;
-use GuzzleHttp\Exception\RequestException;
-
 
 class Grint_API_Service {
   protected $client;
@@ -194,21 +191,24 @@ class Grint_API_Service {
     return (int) round($course_handicap);
   }
 
-  public function getRoundScore($roundId = 0) {
-    if ($roundId > 0) {
-      $uri = '/score/review_score/' . $roundId;
-      $htmlContent = $this->getRequest($uri);
+  /**
+   * Internal: parse the Grint review_score HTML using your existing selectors/attributes.
+   * DO NOT change behavior here (keeps 18-hole working).
+   */
+  protected function parseRoundScoreHtml(string $htmlContent): array {
+    $dom = new DOMDocument();
+    libxml_use_internal_errors(true);
+    @$dom->loadHTML($htmlContent);
+    libxml_clear_errors();
 
-      $dom = new DOMDocument();
-      @$dom->loadHTML($htmlContent);
+    $xpath = new DOMXPath($dom);
 
-      $xpath = new DOMXPath($dom);
+    $scoreQuery = "//table[contains(@class, 'user-input score')]//input[contains(@class, 'input-score-field')]";
+    $scoreInputs = $xpath->query($scoreQuery);
 
-      $scoreQuery = "//table[contains(@class, 'user-input score')]//input[contains(@class, 'input-score-field')]";
-      $scoreInputs = $xpath->query($scoreQuery);
+    $scores = [];
 
-      $scores = [];
-
+    if ($scoreInputs) {
       foreach ($scoreInputs as $input) {
         $holeNumber = $input->getAttribute('data-hole');
         $scoreValue = $input->getAttribute('data-value');
@@ -219,11 +219,13 @@ class Grint_API_Service {
           'score' => $scoreValue
         ];
       }
+    }
 
-      // Now, find all input elements for putts
-      $puttsQuery = "//table[contains(@class, 'user-input optional')]//input[contains(@class, 'input-score-field')]";
-      $puttsInputs = $xpath->query($puttsQuery);
+    // Now, find all input elements for putts
+    $puttsQuery = "//table[contains(@class, 'user-input optional')]//input[contains(@class, 'input-score-field')]";
+    $puttsInputs = $xpath->query($puttsQuery);
 
+    if ($puttsInputs) {
       foreach ($puttsInputs as $input) {
         $holeNumber = $input->getAttribute('data-hole');
         $puttsValue = $input->getAttribute('value');
@@ -232,8 +234,38 @@ class Grint_API_Service {
           $scores[$holeNumber]['putts'] = $puttsValue;
         }
       }
+    }
+
+    return $scores;
+  }
+
+  /**
+   * FIXED: Keep 18-hole behavior unchanged, add 9-hole URL support.
+   * - First try: /score/review_score/{id}
+   * - If it yields no score inputs, try: /score/review_score/{id}/9
+   */
+  public function getRoundScore($roundId = 0) {
+    $roundId = (int) $roundId;
+    if ($roundId <= 0) {
+      return [];
+    }
+
+    // 1) Normal (18-hole) URL — keep as-is.
+    $uri = '/score/review_score/' . $roundId;
+    $htmlContent = $this->getRequest($uri);
+    $scores = $this->parseRoundScoreHtml((string) $htmlContent);
+
+    // If we got anything at all, return it (this preserves existing behavior).
+    if (!empty($scores)) {
       return $scores;
     }
+
+    // 2) 9-hole URL variant.
+    $uri9 = '/score/review_score/' . $roundId . '/9';
+    $htmlContent9 = $this->getRequest($uri9);
+    $scores9 = $this->parseRoundScoreHtml((string) $htmlContent9);
+
+    return $scores9;
   }
 
   /**
@@ -342,6 +374,7 @@ class Grint_API_Service {
     }
     return $values;
   }
+
   // Function to extract a single value
   function extractSingleValue($xpath, $query) {
     $entry = $xpath->query($query)->item(0);
