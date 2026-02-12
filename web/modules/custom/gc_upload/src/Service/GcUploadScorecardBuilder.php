@@ -111,6 +111,7 @@ class GcUploadScorecardBuilder {
   /**
    * Build an editable 18-hole scorecard form section.
    * - Scores come from $scores (blank if missing).
+   * - Putts come from $scores[*]['putts'] if present.
    * - Course info comes from course_id + tee_color via Grint course data (if available).
    */
   public function buildScorecard(array $scores, array $meta = [], string $grint_user_id = ''): array {
@@ -202,14 +203,17 @@ class GcUploadScorecardBuilder {
     $build['scores_table']['front']['hdcp'][0] = ['#markup' => 'Hdcp'];
     $build['scores_table']['front']['par'][0] = ['#markup' => 'Par'];
     $build['scores_table']['front']['score'][0] = ['#markup' => 'Score'];
+    $build['scores_table']['front']['putts'][0] = ['#markup' => 'Putts'];
 
     for ($i = 1; $i <= 9; $i++) {
       $hole = $i;
       $hole_score = isset($scores[$hole]['score']) ? (string) $scores[$hole]['score'] : '';
+      $hole_putts = isset($scores[$hole]['putts']) ? (string) $scores[$hole]['putts'] : '';
 
       $build['scores_table']['front']['yards'][$i] = ['#markup' => $yards[$hole - 1] ?? ''];
       $build['scores_table']['front']['hdcp'][$i] = ['#markup' => $hdcp[$hole - 1] ?? ''];
       $build['scores_table']['front']['par'][$i] = ['#markup' => $pars[$hole - 1] ?? ''];
+
       $build['scores_table']['front']['score'][$i] = [
         '#type' => 'textfield',
         '#size' => 1,
@@ -222,12 +226,26 @@ class GcUploadScorecardBuilder {
         ],
         '#default_value' => $hole_score,
       ];
+
+      $build['scores_table']['front']['putts'][$i] = [
+        '#type' => 'textfield',
+        '#size' => 1,
+        '#required' => FALSE,
+        '#attributes' => [
+          'pattern' => '[0-9]*',
+          'min' => '0',
+          'class' => ['gc-upload-putts-input'],
+          'data-hole' => (string) $hole,
+        ],
+        '#default_value' => $hole_putts,
+      ];
     }
 
     $build['scores_table']['front']['yards'][10] = ['#markup' => $yards_out];
     $build['scores_table']['front']['hdcp'][10] = ['#markup' => ''];
     $build['scores_table']['front']['par'][10] = ['#markup' => $par_out];
     $build['scores_table']['front']['score'][10] = ['#markup' => '<span id="scores_table_front_score">0</span>'];
+    $build['scores_table']['front']['putts'][10] = ['#markup' => '<span id="scores_table_front_putts">0</span>'];
 
     // BACK TABLE.
     $build['scores_table']['back'] = [
@@ -239,14 +257,17 @@ class GcUploadScorecardBuilder {
     $build['scores_table']['back']['hdcp'][0] = ['#markup' => 'Hdcp'];
     $build['scores_table']['back']['par'][0] = ['#markup' => 'Par'];
     $build['scores_table']['back']['score'][0] = ['#markup' => 'Score'];
+    $build['scores_table']['back']['putts'][0] = ['#markup' => 'Putts'];
 
     for ($i = 1; $i <= 9; $i++) {
       $hole = $i + 9;
       $hole_score = isset($scores[$hole]['score']) ? (string) $scores[$hole]['score'] : '';
+      $hole_putts = isset($scores[$hole]['putts']) ? (string) $scores[$hole]['putts'] : '';
 
       $build['scores_table']['back']['yards'][$i] = ['#markup' => $yards[$hole - 1] ?? ''];
       $build['scores_table']['back']['hdcp'][$i] = ['#markup' => $hdcp[$hole - 1] ?? ''];
       $build['scores_table']['back']['par'][$i] = ['#markup' => $pars[$hole - 1] ?? ''];
+
       $build['scores_table']['back']['score'][$i] = [
         '#type' => 'textfield',
         '#size' => 1,
@@ -259,24 +280,43 @@ class GcUploadScorecardBuilder {
         ],
         '#default_value' => $hole_score,
       ];
+
+      $build['scores_table']['back']['putts'][$i] = [
+        '#type' => 'textfield',
+        '#size' => 1,
+        '#required' => FALSE,
+        '#attributes' => [
+          'pattern' => '[0-9]*',
+          'min' => '0',
+          'class' => ['gc-upload-putts-input'],
+          'data-hole' => (string) $hole,
+        ],
+        '#default_value' => $hole_putts,
+      ];
     }
 
     $build['scores_table']['back']['yards'][10] = ['#markup' => $yards_in];
     $build['scores_table']['back']['hdcp'][10] = ['#markup' => ''];
     $build['scores_table']['back']['par'][10] = ['#markup' => $par_in];
     $build['scores_table']['back']['score'][10] = ['#markup' => '<span id="scores_table_back_score">0</span>'];
+    $build['scores_table']['back']['putts'][10] = ['#markup' => '<span id="scores_table_back_putts">0</span>'];
 
     // TOTALS TABLE (simple for now).
     $build['scores_table']['total'] = [
       '#type' => 'table',
-      '#header' => ['Gross Score', 'Par', 'Yards'],
+      '#header' => ['Gross Score', 'Par', 'Yards', 'Total Putts'],
       '#attributes' => ['class' => ['scorecard-table-input']],
     ];
 
     $grossScore = 0;
+    $totalPutts = 0;
+
     foreach ($scores as $hole => $data) {
       if (isset($data['score']) && is_numeric($data['score'])) {
         $grossScore += (int) $data['score'];
+      }
+      if (isset($data['putts']) && is_numeric($data['putts'])) {
+        $totalPutts += (int) $data['putts'];
       }
     }
 
@@ -288,6 +328,9 @@ class GcUploadScorecardBuilder {
     ];
     $build['scores_table']['total']['score']['yardage'] = [
       '#markup' => htmlspecialchars((string) $yards_total, ENT_QUOTES, 'UTF-8'),
+    ];
+    $build['scores_table']['total']['score']['putts'] = [
+      '#markup' => "<span id='scores_table_total_putts'>{$totalPutts}</span>",
     ];
 
     return $build;

@@ -35,6 +35,7 @@ class GcUploadPostScorePayloadBuilder {
    *
    * Restored behavior:
    * - gross = Grint scorecard hole scores
+   * - putts = scorecard hole putts (new)
    * - yards/par/handicap = GC tee hole data (facilityId + memberId + courseId + teeId)
    * - esc = sum of gross
    */
@@ -66,6 +67,17 @@ class GcUploadPostScorePayloadBuilder {
     // 1) Get gross per hole from Grint scorecard inputs.
     $gross_by_hole = $this->extractGrossByHoleFromFormValues($values);
 
+    // NEW: 1b) Get putts per hole from scorecard inputs.
+    $putts_by_hole = $this->extractPuttsByHoleFromFormValues($values);
+
+    // Helpful debug (won't break anything).
+    $this->log('Extracted gross holes=@holes', [
+      '@holes' => implode(',', array_keys($gross_by_hole)),
+    ]);
+    $this->log('Extracted putts holes=@holes', [
+      '@holes' => implode(',', array_keys($putts_by_hole)),
+    ]);
+
     // 2) Get yards/par/handicap per hole from GC tee data.
     $gc_hole_map = [];
     if ($facilityId > 0 && $individualId > 0 && $courseId > 0 && $teeId > 0) {
@@ -89,7 +101,11 @@ class GcUploadPostScorePayloadBuilder {
         'par' => $gc_hole_map[$h]['par'] ?? NULL,
         'handicap' => $gc_hole_map[$h]['handicap'] ?? NULL,
         'gross' => $gross_by_hole[$h] ?? NULL,
-        'putts' => NULL,
+
+        // NEW:
+        'putts' => $putts_by_hole[$h] ?? NULL,
+
+        // Leaving these alone.
         'puttLength' => NULL,
         'club' => NULL,
         'drive' => NULL,
@@ -175,6 +191,59 @@ class GcUploadPostScorePayloadBuilder {
     return $gross_by_hole;
   }
 
+  /**
+   * NEW: Pull per-hole putts from the same scorecard inputs.
+   */
+  protected function extractPuttsByHoleFromFormValues(array $values): array {
+    $input = [];
+    try {
+      $input = \Drupal::request()->request->all();
+    }
+    catch (\Throwable $e) {
+      $input = [];
+    }
+
+    $scores_table = $this->findScoresTable($values);
+    if (!is_array($scores_table)) {
+      $scores_table = $this->findScoresTable($input);
+    }
+
+    $putts_by_hole = [];
+
+    if (is_array($scores_table)) {
+      // Front 1..9
+      if (!empty($scores_table['front']['putts']) && is_array($scores_table['front']['putts'])) {
+        foreach ($scores_table['front']['putts'] as $k => $v) {
+          if (!is_numeric($k)) {
+            continue;
+          }
+          $hole = (int) $k;
+          if ($hole < 1 || $hole > 9) {
+            continue;
+          }
+          $putts_by_hole[$hole] = $this->toNullableInt($v);
+        }
+      }
+
+      // Back 10..18 (keys 1..9 mapped to +9)
+      if (!empty($scores_table['back']['putts']) && is_array($scores_table['back']['putts'])) {
+        foreach ($scores_table['back']['putts'] as $k => $v) {
+          if (!is_numeric($k)) {
+            continue;
+          }
+          $idx = (int) $k;
+          if ($idx < 1 || $idx > 9) {
+            continue;
+          }
+          $hole = $idx + 9;
+          $putts_by_hole[$hole] = $this->toNullableInt($v);
+        }
+      }
+    }
+
+    return $putts_by_hole;
+  }
+
   protected function findScoresTable($data): ?array {
     if (!is_array($data)) {
       return NULL;
@@ -209,12 +278,23 @@ class GcUploadPostScorePayloadBuilder {
     if (!is_array($t['front']) || !is_array($t['back'])) {
       return FALSE;
     }
+
+    // Existing score table structure
     if (isset($t['front']['score']) && is_array($t['front']['score'])) {
       return TRUE;
     }
     if (isset($t['back']['score']) && is_array($t['back']['score'])) {
       return TRUE;
     }
+
+    // NEW: allow putts-only structure to still be recognized as the scorecard payload table.
+    if (isset($t['front']['putts']) && is_array($t['front']['putts'])) {
+      return TRUE;
+    }
+    if (isset($t['back']['putts']) && is_array($t['back']['putts'])) {
+      return TRUE;
+    }
+
     return FALSE;
   }
 
