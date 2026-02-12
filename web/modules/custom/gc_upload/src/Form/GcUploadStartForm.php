@@ -66,6 +66,29 @@ class GcUploadStartForm extends FormBase {
     return $out;
   }
 
+  /**
+   * Convert a Grint date string like "Nov 2, 2025" into Y-m-d.
+   * Returns '' if it can't be parsed.
+   */
+  protected function parseGrintDateTextToYmd(string $dateText): string {
+    $dateText = trim($dateText);
+    if ($dateText === '') {
+      return '';
+    }
+
+    $ts = strtotime($dateText);
+    if ($ts !== FALSE) {
+      return date('Y-m-d', $ts);
+    }
+
+    $dt = \DateTime::createFromFormat('M j, Y', $dateText);
+    if ($dt instanceof \DateTime) {
+      return $dt->format('Y-m-d');
+    }
+
+    return '';
+  }
+
   protected function extractTrailingId(string $value): string {
     $value = trim($value);
     if ($value === '') {
@@ -85,6 +108,7 @@ class GcUploadStartForm extends FormBase {
     return '';
   }
 
+  // --- KEEPING YOUR WORKING LOGIC EXACTLY AS-IS ---
   protected function resolveGcSelections(FormStateInterface $form_state, string $memberId, array $grint_meta): void {
     $facilityName = trim((string) ($grint_meta['facility_name'] ?? ''));
     $courseName = trim((string) ($grint_meta['course_name'] ?? ''));
@@ -249,6 +273,9 @@ class GcUploadStartForm extends FormBase {
     if (!$form_state->has('mode')) {
       $form_state->set('mode', 'choose');
     }
+    if (!$form_state->has('round_wave')) {
+      $form_state->set('round_wave', 0);
+    }
 
     $mode = (string) $form_state->get('mode');
 
@@ -277,10 +304,7 @@ class GcUploadStartForm extends FormBase {
     $form['#prefix'] = '<div id="gc-upload-start-form">';
     $form['#suffix'] = '</div>';
 
-    $today = new DrupalDateTime('now');
-
     $header_type = ($mode === 'loaded') ? 'hidden' : 'textfield';
-    $date_type = ($mode === 'loaded') ? 'hidden' : 'date';
 
     $form['grint_user_id'] = [
       '#type' => $header_type,
@@ -306,16 +330,10 @@ class GcUploadStartForm extends FormBase {
       ],
     ];
 
-    $form['scorecard_date'] = [
-      '#type' => $date_type,
-      '#title' => $this->t('Scorecard Date'),
-      '#default_value' => $form_state->getValue('scorecard_date') ?? $today->format('Y-m-d'),
-      '#ajax' => [
-        'callback' => '::ajaxRefreshForm',
-        'wrapper' => 'gc-upload-start-form',
-        'event' => 'change',
-        'progress' => ['type' => 'throbber'],
-      ],
+    // Wave (paging) state for Grint feed.
+    $form['round_wave'] = [
+      '#type' => 'hidden',
+      '#value' => (string) ($form_state->get('round_wave') ?? 0),
     ];
 
     $form['loaded_round_id'] = [
@@ -366,19 +384,18 @@ class GcUploadStartForm extends FormBase {
 
     $grint_uid = $this->effectiveValue($form_state, $form, 'grint_user_id');
     $gc_id = $this->effectiveValue($form_state, $form, 'gc_id');
-    $date = $this->effectiveValue($form_state, $form, 'scorecard_date');
 
-    $this->logDebug('Header effective values: grint_uid=@grint_uid gc_id=@gc_id date=@date mode=@mode', [
+    $this->logDebug('Header effective values: grint_uid=@grint_uid gc_id=@gc_id mode=@mode wave=@wave', [
       '@grint_uid' => $grint_uid,
       '@gc_id' => $gc_id,
-      '@date' => $date,
       '@mode' => $mode,
+      '@wave' => (int) ($form_state->get('round_wave') ?? 0),
     ]);
 
-    if ($grint_uid === '' || $gc_id === '' || $date === '') {
+    if ($grint_uid === '' || $gc_id === '') {
       $section['help'] = [
         '#type' => 'markup',
-        '#markup' => '<div class="gc-upload-help">Fill in Grint User ID, Golf Canada ID, and Scorecard Date to load rounds.</div>',
+        '#markup' => '<div class="gc-upload-help">Fill in Grint User ID and Golf Canada ID to load rounds.</div>',
       ];
       return $section;
     }
@@ -534,10 +551,13 @@ class GcUploadStartForm extends FormBase {
           '#default_value' => (string) ($form_state->getValue('holes_mode') ?? '18'),
         ];
 
+        // Date defaults to the selected round date (if available), otherwise today.
+        $today = new DrupalDateTime('now');
+        $selected_round_date = (string) ($form_state->get('selected_round_date_ymd') ?? '');
         $section['loaded_wrap']['post_fields_wrapper']['post_fields']['played_date'] = [
           '#type' => 'date',
           '#title' => $this->t('Date'),
-          '#default_value' => (string) ($form_state->getValue('played_date') ?? $date),
+          '#default_value' => (string) ($form_state->getValue('played_date') ?? ($selected_round_date !== '' ? $selected_round_date : $today->format('Y-m-d'))),
         ];
 
         $section['loaded_wrap']['post_fields_wrapper']['post_fields']['format'] = [
@@ -591,11 +611,15 @@ class GcUploadStartForm extends FormBase {
       return $section;
     }
 
-    // CHOOSE MODE.
+    // CHOOSE MODE (with paging via wave).
     try {
-      $html = $this->grintAPI->getRoundFeed($grint_uid);
+      $wave = (int) ($form_state->get('round_wave') ?? 0);
+
+      // Backward compatible call: wave only included if > 0.
+      $html = $this->grintAPI->getRoundFeed($grint_uid, $wave > 0 ? $wave : NULL);
+
       $rounds = $this->extractRounds($html);
-      $rounds = array_slice($rounds, 0, 8);
+      $rounds = array_slice($rounds, 0, 30);
 
       if (empty($rounds)) {
         $section['none'] = [
@@ -605,8 +629,47 @@ class GcUploadStartForm extends FormBase {
         return $section;
       }
 
+      // Pager buttons.
+      $section['round_pager'] = [
+        '#type' => 'actions',
+        '#attributes' => ['class' => ['gc-upload-round-pager']],
+      ];
+
+
+
+      $section['round_pager']['older'] = [
+        '#type' => 'submit',
+        '#value' => $this->t('Older rounds'),
+        '#submit' => ['::roundPagerOlderSubmit'],
+        '#ajax' => [
+          'callback' => '::ajaxRefreshForm',
+          'wrapper' => 'gc-upload-start-form',
+          'progress' => ['type' => 'throbber'],
+        ],
+        '#limit_validation_errors' => [
+          ['grint_user_id'],
+          ['gc_id'],
+        ],
+      ];
+      $section['round_pager']['newer'] = [
+        '#type' => 'submit',
+        '#value' => $this->t('Newer rounds'),
+        '#submit' => ['::roundPagerNewerSubmit'],
+        '#ajax' => [
+          'callback' => '::ajaxRefreshForm',
+          'wrapper' => 'gc-upload-start-form',
+          'progress' => ['type' => 'throbber'],
+        ],
+        '#limit_validation_errors' => [
+          ['grint_user_id'],
+          ['gc_id'],
+        ],
+        '#disabled' => ($wave <= 0),
+      ];
+
       $options = [];
       $round_meta_map = [];
+      $round_date_map = [];
 
       foreach ($rounds as $round) {
         $rid = (string) $round['numberPost'];
@@ -617,9 +680,14 @@ class GcUploadStartForm extends FormBase {
         $options[$rid] = $display;
 
         $round_meta_map[$rid] = $this->parseGrintRoundLabel($label);
+        $round_date_map[$rid] = [
+          'dateText' => $dateText,
+          'ymd' => $this->parseGrintDateTextToYmd($dateText),
+        ];
       }
 
       $form_state->set('round_meta_map', $round_meta_map);
+      $form_state->set('round_date_map', $round_date_map);
 
       $default_selected = (string) ($form_state->getValue('selected_round') ?: array_key_first($options));
 
@@ -644,7 +712,6 @@ class GcUploadStartForm extends FormBase {
         '#limit_validation_errors' => [
           ['grint_user_id'],
           ['gc_id'],
-          ['scorecard_date'],
           ['selected_round'],
         ],
       ];
@@ -674,6 +741,20 @@ class GcUploadStartForm extends FormBase {
     // Keep simple for now.
   }
 
+  public function roundPagerOlderSubmit(array &$form, FormStateInterface $form_state) {
+    $wave = (int) ($form_state->get('round_wave') ?? 0);
+    $form_state->set('round_wave', $wave + 1);
+    $form_state->setValue('selected_round', NULL);
+    $form_state->setRebuild(TRUE);
+  }
+
+  public function roundPagerNewerSubmit(array &$form, FormStateInterface $form_state) {
+    $wave = (int) ($form_state->get('round_wave') ?? 0);
+    $form_state->set('round_wave', max(0, $wave - 1));
+    $form_state->setValue('selected_round', NULL);
+    $form_state->setRebuild(TRUE);
+  }
+
   public function loadRoundSubmit(array &$form, FormStateInterface $form_state) {
     $selected_round = (string) $form_state->getValue('selected_round');
     $gc_id = (string) $form_state->getValue('gc_id');
@@ -696,6 +777,19 @@ class GcUploadStartForm extends FormBase {
     ]);
 
     $this->resolveGcSelections($form_state, $gc_id, $meta);
+
+    // NEW: Set played_date from selected round date if available.
+    $round_date_map = (array) $form_state->get('round_date_map');
+    $ymd = (string) ($round_date_map[$selected_round]['ymd'] ?? '');
+    if ($ymd !== '') {
+      $form_state->set('selected_round_date_ymd', $ymd);
+      $form_state->setValue('played_date', $ymd);
+      $this->logDebug('Selected round date parsed: @ymd', ['@ymd' => $ymd]);
+    }
+    else {
+      $form_state->set('selected_round_date_ymd', '');
+      $this->logDebug('Selected round date could not be parsed.');
+    }
 
     $form_state->set('mode', 'loaded');
     $form_state->setRebuild(TRUE);
@@ -756,18 +850,34 @@ class GcUploadStartForm extends FormBase {
     $divNodes = $xpath->query("//div[contains(@class, 'newsfeed-container')][@number-post]");
 
     foreach ($divNodes as $divNode) {
+      // This is sometimes a feed post id (NOT always the round id).
       $numberPost = $divNode->getAttribute('number-post');
 
       $linkNode = $xpath->query(".//a[contains(@class, 'newsfeed-link-message')]", $divNode)->item(0);
-      $linkText = $linkNode ? $linkNode->nodeValue : null;
-      $linkTextRemoved = $linkText ? substr(trim($linkText), 9) : '';
+      $href = $linkNode ? (string) $linkNode->getAttribute('href') : '';
+      $linkText = $linkNode ? (string) $linkNode->nodeValue : '';
+      $linkText = trim($linkText);
+
+      // Your existing behavior: remove leading "Score of " (first 9 chars).
+      $linkTextRemoved = $linkText !== '' ? substr($linkText, 9) : '';
+      $linkTextRemoved = trim((string) $linkTextRemoved);
+
+      // IMPORTANT: Extract real round id from href if present.
+      // Supports both /review_score/{id} and /score/review_score/{id}
+      $roundId = '';
+      if ($href !== '' && preg_match('~/(?:score/)?review_score/(\d+)~', $href, $m)) {
+        $roundId = (string) $m[1];
+      }
+
+      // Prefer real round id; fallback to number-post if not found.
+      $effectiveId = $roundId !== '' ? $roundId : $numberPost;
 
       $dateNode = $xpath->query(".//span[contains(@class, 'newsfeed-date')]", $divNode)->item(0);
-      $dateText = $dateNode ? $dateNode->nodeValue : null;
+      $dateText = $dateNode ? trim((string) $dateNode->nodeValue) : '';
 
-      if ($numberPost > 0) {
+      if ((int) $effectiveId > 0) {
         $rounds[] = [
-          'numberPost' => $numberPost,
+          'numberPost' => $effectiveId,
           'linkText' => ucfirst($linkTextRemoved),
           'dateText' => $dateText,
         ];

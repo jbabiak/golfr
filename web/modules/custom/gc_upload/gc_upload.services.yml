@@ -5,3 +5,4 @@ services:
 
   gc_upload.post_score_payload_builder:
     class: Drupal\gc_upload\Service\GcUploadPostScorePayloadBuilder
+    arguments: ['@logger.factory']

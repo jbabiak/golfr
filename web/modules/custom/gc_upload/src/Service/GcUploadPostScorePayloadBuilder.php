@@ -3,8 +3,32 @@
 namespace Drupal\gc_upload\Service;
 
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Logger\LoggerChannelFactoryInterface;
+use Drupal\Core\Logger\LoggerChannelInterface;
 
 class GcUploadPostScorePayloadBuilder {
+
+  protected ?LoggerChannelInterface $logger = NULL;
+
+  /**
+   * IMPORTANT:
+   * - Must be optional because the service definition currently passes 0 args.
+   * - This prevents "Too few arguments" fatals and is backward compatible.
+   */
+  public function __construct(LoggerChannelFactoryInterface $loggerFactory = NULL) {
+    if ($loggerFactory) {
+      $this->logger = $loggerFactory->get('gc_upload');
+    }
+  }
+
+  protected function log(string $message, array $context = []): void {
+    if ($this->logger) {
+      $this->logger->notice($message, $context);
+    }
+    else {
+      \Drupal::logger('gc_upload')->notice($message, $context);
+    }
+  }
 
   /**
    * Build Golf Canada score payload array to match the exact network JSON structure.
@@ -22,6 +46,7 @@ class GcUploadPostScorePayloadBuilder {
     $courseId = isset($values['gc_course_id']) ? (int) $values['gc_course_id'] : 0;
     $teeId = isset($values['gc_tee_id']) ? (int) $values['gc_tee_id'] : 0;
 
+    // Backward compatible: scorecard_date might still exist in some flows.
     $played_date = (string) ($values['played_date'] ?? $values['scorecard_date'] ?? '');
     $date_iso = $this->dateToIsoMs($played_date);
 
@@ -50,7 +75,7 @@ class GcUploadPostScorePayloadBuilder {
         $gc_hole_map = $gc->getTeeHoles($facilityId, $individualId, $courseId, $teeId);
       }
       catch (\Throwable $e) {
-        \Drupal::logger('gc_upload')->notice('GC getTeeHoles failed: @msg', ['@msg' => $e->getMessage()]);
+        $this->log('GC getTeeHoles failed: @msg', ['@msg' => $e->getMessage()]);
         $gc_hole_map = [];
       }
     }
@@ -99,27 +124,16 @@ class GcUploadPostScorePayloadBuilder {
 
   /**
    * Pull the per-hole gross scores from the Grint scorecard table inputs.
-   *
-   * Expected structure from your scorecard builder:
-   * $values['rounds_wrapper']['loaded_wrap']['scorecard']['scores_table']
-   *   ['front']['score'][1..9]
-   *   ['back']['score'][1..9] mapped to 10..18
    */
   protected function extractGrossByHoleFromFormValues(array $values): array {
-    // NOTE: We also want to check user input because Drupal sometimes doesn't
-    // place deeply-nested inputs into getValues() the way you expect.
     $input = [];
     try {
-      // If you’re on Drupal 10/11 this exists.
       $input = \Drupal::request()->request->all();
-    } catch (\Throwable $e) {
+    }
+    catch (\Throwable $e) {
       $input = [];
     }
 
-    // Prefer real FormState user input if available (best source).
-    // We can't typehint FormStateInterface here because you passed only $values,
-    // so we fall back to request input as a practical fix.
-    // If you want the clean version, I’ll adjust the signature to accept FormStateInterface.
     $scores_table = $this->findScoresTable($values);
     if (!is_array($scores_table)) {
       $scores_table = $this->findScoresTable($input);
@@ -161,24 +175,17 @@ class GcUploadPostScorePayloadBuilder {
     return $gross_by_hole;
   }
 
-  /**
-   * Recursively find an array shaped like:
-   *   ['front'=>['score'=>...], 'back'=>['score'=>...]]
-   * anywhere inside the submitted values.
-   */
   protected function findScoresTable($data): ?array {
     if (!is_array($data)) {
       return NULL;
     }
 
-    // Exact expected key.
     if (isset($data['scores_table']) && is_array($data['scores_table'])) {
       if ($this->looksLikeScoresTable($data['scores_table'])) {
         return $data['scores_table'];
       }
     }
 
-    // Sometimes it might already BE the table.
     if ($this->looksLikeScoresTable($data)) {
       return $data;
     }
@@ -202,7 +209,6 @@ class GcUploadPostScorePayloadBuilder {
     if (!is_array($t['front']) || !is_array($t['back'])) {
       return FALSE;
     }
-    // We only care that it has the score arrays.
     if (isset($t['front']['score']) && is_array($t['front']['score'])) {
       return TRUE;
     }
@@ -212,10 +218,6 @@ class GcUploadPostScorePayloadBuilder {
     return FALSE;
   }
 
-  /**
-   * esc = sum of gross (only numeric values)
-   * Returns NULL if nothing numeric was entered.
-   */
   protected function sumGross(array $gross_by_hole): ?int {
     $sum = 0;
     $count = 0;

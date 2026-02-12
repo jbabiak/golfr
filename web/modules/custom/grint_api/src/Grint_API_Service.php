@@ -74,12 +74,14 @@ class Grint_API_Service {
     $response = $this->client->get($uri);
     return $response->getBody()->getContents();
   }
+
   public function postRequest($uri, $payload = null) {
     $response = $this->client->post($uri, [
       'form_params' => $payload
     ]);
     return json_decode($response->getBody()->getContents());
   }
+
   public function postRequestHTML($uri, $payload) {
     $response = $this->client->post($uri, [
       'form_params' => $payload
@@ -149,10 +151,7 @@ class Grint_API_Service {
     $payload = [
       'course_id' => $course_id,
       'tee' => $tee_color,
-//      'user_id' => 1001199,
       'round' => $round,
-//      'score_id' => 31816565,
-//      'handicap_company_id' => 7,
     ];
     return $this->postRequest($uri, $payload);
   }
@@ -197,25 +196,19 @@ class Grint_API_Service {
 
   public function getRoundScore($roundId = 0) {
     if ($roundId > 0) {
-      //https://www.thegrint.com/score/review_score/34583210
       $uri = '/score/review_score/' . $roundId;
       $htmlContent = $this->getRequest($uri);
 
-      // Create a new DOMDocument and load the HTML
       $dom = new DOMDocument();
-      @$dom->loadHTML($htmlContent); // The @ suppresses warnings from invalid HTML
+      @$dom->loadHTML($htmlContent);
 
-      // Create a new XPath object to query the DOM
       $xpath = new DOMXPath($dom);
 
-      // First, find all input elements for scores
       $scoreQuery = "//table[contains(@class, 'user-input score')]//input[contains(@class, 'input-score-field')]";
       $scoreInputs = $xpath->query($scoreQuery);
 
-      // Array to hold the extracted data
       $scores = [];
 
-      // Iterate over the found input elements for scores and extract the data
       foreach ($scoreInputs as $input) {
         $holeNumber = $input->getAttribute('data-hole');
         $scoreValue = $input->getAttribute('data-value');
@@ -231,30 +224,37 @@ class Grint_API_Service {
       $puttsQuery = "//table[contains(@class, 'user-input optional')]//input[contains(@class, 'input-score-field')]";
       $puttsInputs = $xpath->query($puttsQuery);
 
-      // Iterate over the found input elements for putts and update the $scores array
       foreach ($puttsInputs as $input) {
         $holeNumber = $input->getAttribute('data-hole');
         $puttsValue = $input->getAttribute('value');
 
-        // Update the scores array with putts data
         if (isset($scores[$holeNumber])) {
           $scores[$holeNumber]['putts'] = $puttsValue;
         }
       }
       return $scores;
     }
-    // $uri = '/score/ajax_course/'; this dont work or i forget how
   }
-  public function getRoundFeed($user_id = 1597150) {
+
+  /**
+   * UPDATED: Supports Grint feed paging.
+   * - No wave => latest rounds (backward compatible)
+   * - wave 1/2/3... => older pages
+   */
+  public function getRoundFeed($user_id = 1597150, $wave = NULL) {
     $uri = '/newsfeed_util/loadActivityFriend';
     $payload = [
       'friendId' => $user_id,
     ];
+
+    if ($wave !== NULL && $wave !== '' && is_numeric($wave)) {
+      $payload['wave'] = (int) $wave;
+    }
+
     return $this->postRequestHTML($uri, $payload);
   }
 
   public function processHandicap($handicap_html){
-    // Create a new DOMDocument instance and load the HTML content
     $dom = new DOMDocument;
     libxml_use_internal_errors(true); // Disable warnings for invalid HTML
     $dom->loadHTML($handicap_html);
@@ -266,7 +266,6 @@ class Grint_API_Service {
     $querySectionOut = "//td[contains(@class, 'data-entry') and contains(@class, 'section-out')]";
     $querySectionIn = "//td[contains(@class, 'data-entry') and contains(@class, 'section-in')]";
 
-
     $sectionOutValues = $this->extractValues($xpath, $querySectionOut);
     $sectionInValues = $this->extractValues($xpath, $querySectionIn);
 
@@ -276,30 +275,25 @@ class Grint_API_Service {
   }
 
   public function processYardages($yardage_html) {
-// Create a new DOMDocument instance and load the HTML content
     $dom = new DOMDocument;
-    libxml_use_internal_errors(true); // Disable warnings for invalid HTML
+    libxml_use_internal_errors(true);
     $dom->loadHTML($yardage_html);
     libxml_clear_errors();
 
-    // Create a new DOMXPath instance for the DOMDocument
     $xpath = new DOMXPath($dom);
 
-    // XPath queries for different sections
     $querySectionOut = "//td[contains(@class, 'data-entry') and contains(@class, 'section-out')]";
     $querySectionIn = "//td[contains(@class, 'data-entry') and contains(@class, 'section-in')]";
     $querySubtotalOut = "//td[contains(@class, 'subtotal') and contains(@class, 'section-out')]";
     $querySubtotalIn = "//td[contains(@class, 'subtotal') and contains(@class, 'section-in')]";
     $queryTotalYardage = "//td[contains(@class, 'total') and contains(@class, 'yardage')]";
 
-    // Extract data using XPath queries
     $sectionOutValues = $this->extractValues($xpath, $querySectionOut);
     $sectionInValues = $this->extractValues($xpath, $querySectionIn);
     $subtotalOut = $this->extractSingleValue($xpath, $querySubtotalOut);
     $subtotalIn = $this->extractSingleValue($xpath, $querySubtotalIn);
     $totalYardage = $this->extractSingleValue($xpath, $queryTotalYardage);
 
-    // Combine section-out and section-in values
     $combinedValues = array_merge($sectionOutValues, $sectionInValues);
 
     $yardages['hole_yardage'] = $combinedValues;
@@ -311,32 +305,25 @@ class Grint_API_Service {
   }
 
   public function processPar($par_html){
-    // Create a new DOMDocument instance and load the HTML content
     $dom = new DOMDocument;
-    libxml_use_internal_errors(true); // Disable warnings for invalid HTML
+    libxml_use_internal_errors(true);
     $dom->loadHTML($par_html);
     libxml_clear_errors();
 
-    // Create a new DOMXPath instance for the DOMDocument
     $xpath = new DOMXPath($dom);
 
-    // XPath queries for different sections
     $querySectionOut = "//td[contains(@class, 'data-entry') and contains(@class, 'section-out')]";
     $querySectionIn = "//td[contains(@class, 'data-entry') and contains(@class, 'section-in')]";
     $querySubtotalOut = "//td[contains(@class, 'subtotal') and contains(@class, 'section-out')]";
     $querySubtotalIn = "//td[contains(@class, 'subtotal') and contains(@class, 'section-in')]";
     $queryTotalPar = "//td[contains(@class, 'total') and contains(@class, 'course-par')]";
 
-    // Extract data using XPath queries
     $sectionOutValues = $this->extractValues($xpath, $querySectionOut);
     $sectionInValues = $this->extractValues($xpath, $querySectionIn);
     $subtotalOut = $this->extractSingleValue($xpath, $querySubtotalOut);
     $subtotalIn = $this->extractSingleValue($xpath, $querySubtotalIn);
     $totalPar = $this->extractSingleValue($xpath, $queryTotalPar);
 
-    // Function to extract multiple values
-
-    // Combine section-out and section-in values
     $combinedValues = array_merge($sectionOutValues, $sectionInValues);
 
     $pars['hole_par'] = $combinedValues;
@@ -347,7 +334,7 @@ class Grint_API_Service {
     return $pars;
   }
 
-  function extractValues($xpath, $query) {
+  public function extractValues(DOMXPath $xpath, string $query): array {
     $entries = $xpath->query($query);
     $values = [];
     foreach ($entries as $entry) {
