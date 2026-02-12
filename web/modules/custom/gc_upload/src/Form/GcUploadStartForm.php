@@ -44,23 +44,56 @@ class GcUploadStartForm extends FormBase {
       return $out;
     }
 
-    if (preg_match('/\bat\s+(.+?)\s*\|\s*(.+?)\s*\[([^\]]+)\]\s*$/i', $label, $m)) {
+    // Remove trailing date part if present: " — Nov 2, 2025"
+    $label_no_date = preg_replace('/\s+[—-]\s+[A-Za-z]{3,9}\s+\d{1,2},\s+\d{4}\s*$/u', '', $label);
+    $label_no_date = trim((string) $label_no_date);
+
+    // 1) Your existing "known good" format:
+    // "Score of 81 at Championship | Pine View Golf Course [Blue]"
+    if (preg_match('/\bat\s+(.+?)\s*\|\s*(.+?)\s*\[([^\]]+)\]\s*$/i', $label_no_date, $m)) {
       $out['course_name'] = trim($m[1]);
       $out['facility_name'] = trim($m[2]);
       $out['tee_name'] = trim($m[3]);
       return $out;
     }
 
-    if (preg_match('/\[(.*?)\]/', $label, $m)) {
+    // 2) Common single-name facility format (NO pipe):
+    // "Score of 38 at Sand Point Golf Club [White]"
+    // Treat "Sand Point Golf Club" as the facility_name.
+    if (preg_match('/\bat\s+(.+?)\s*\[([^\]]+)\]\s*$/i', $label_no_date, $m)) {
+      $out['facility_name'] = trim($m[1]);
+      $out['tee_name'] = trim($m[2]);
+      // course_name stays blank (some clubs have 1 course, we can pick single_course later)
+      return $out;
+    }
+
+    // 3) Pipe present but no tee in brackets (rare, but handle):
+    // "... at Championship | Pine View Golf Course"
+    if (preg_match('/\bat\s+(.+?)\s*\|\s*(.+?)\s*$/i', $label_no_date, $m)) {
+      $out['course_name'] = trim($m[1]);
+      $out['facility_name'] = trim($m[2]);
+    }
+
+    // 4) Tee only fallback: capture bracket
+    if ($out['tee_name'] === '' && preg_match('/\[(.*?)\]/', $label_no_date, $m)) {
       $out['tee_name'] = trim($m[1]);
     }
 
-    $parts = array_map('trim', explode('|', $label));
-    if (count($parts) >= 2) {
-      if (preg_match('/\bat\s+(.+)$/i', $parts[0], $m2)) {
-        $out['course_name'] = trim($m2[1]);
+    // 5) Very loose fallback: try to pull whatever follows "at "
+    // If it contains a pipe, split it.
+    if ($out['facility_name'] === '' && preg_match('/\bat\s+(.+)$/i', $label_no_date, $m)) {
+      $after_at = trim($m[1]);
+      $parts = array_map('trim', explode('|', $after_at));
+      if (count($parts) >= 2) {
+        $out['course_name'] = $out['course_name'] ?: $parts[0];
+        $out['facility_name'] = $out['facility_name'] ?: preg_replace('/\[[^\]]+\]/', '', $parts[1]);
+        $out['facility_name'] = trim((string) $out['facility_name']);
       }
-      $out['facility_name'] = trim(preg_replace('/\[[^\]]+\]/', '', $parts[1]));
+      else {
+        // No pipe: assume it's the facility name.
+        $out['facility_name'] = $out['facility_name'] ?: preg_replace('/\[[^\]]+\]/', '', $after_at);
+        $out['facility_name'] = trim((string) $out['facility_name']);
+      }
     }
 
     return $out;
@@ -108,19 +141,179 @@ class GcUploadStartForm extends FormBase {
     return '';
   }
 
-  // --- KEEPING YOUR WORKING LOGIC EXACTLY AS-IS ---
+  /**
+   * Normalize a name for fuzzy matching (safe fallback only).
+   * - lowercases
+   * - removes punctuation
+   * - collapses whitespace
+   * - strips common filler words
+   */
+  protected function normalizeName(string $s): string {
+    $s = trim(mb_strtolower($s));
+    if ($s === '') {
+      return '';
+    }
+
+    // Replace & with "and" to normalize.
+    $s = str_replace('&', ' and ', $s);
+
+    // Remove punctuation.
+    $s = preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $s);
+
+    // Collapse whitespace.
+    $s = preg_replace('/\s+/u', ' ', $s);
+    $s = trim($s);
+
+    // Remove common golf words (ONLY for matching fallback).
+    $stop = [
+      'the', 'golf', 'club', 'course', 'courses', 'country', 'cc',
+      'gc', 'and', 'of', 'at', 'links',
+    ];
+
+    $parts = $s === '' ? [] : explode(' ', $s);
+    $parts2 = [];
+    foreach ($parts as $p) {
+      if ($p === '' || in_array($p, $stop, TRUE)) {
+        continue;
+      }
+      $parts2[] = $p;
+    }
+
+    return trim(implode(' ', $parts2));
+  }
+
+  /**
+   * Best-match helper:
+   * 1) exact (case-insensitive)
+   * 2) normalized exact
+   * 3) normalized contains (either direction)
+   * Returns ['id' => '', 'name' => '', 'reason' => '...'] or empty.
+   */
+  protected function bestMatchByName(array $items, string $targetName): array {
+    $targetName = trim($targetName);
+    if ($targetName === '' || empty($items)) {
+      return [];
+    }
+
+    // 1) Exact match.
+    foreach ($items as $it) {
+      if (!isset($it['id'], $it['name'])) {
+        continue;
+      }
+      if (strcasecmp(trim((string) $it['name']), $targetName) === 0) {
+        return ['id' => (string) $it['id'], 'name' => (string) $it['name'], 'reason' => 'exact'];
+      }
+    }
+
+    $nTarget = $this->normalizeName($targetName);
+    if ($nTarget === '') {
+      return [];
+    }
+
+    // 2) Normalized exact.
+    foreach ($items as $it) {
+      if (!isset($it['id'], $it['name'])) {
+        continue;
+      }
+      $n = $this->normalizeName((string) $it['name']);
+      if ($n !== '' && $n === $nTarget) {
+        return ['id' => (string) $it['id'], 'name' => (string) $it['name'], 'reason' => 'normalized_exact'];
+      }
+    }
+
+    // 3) Normalized contains.
+    foreach ($items as $it) {
+      if (!isset($it['id'], $it['name'])) {
+        continue;
+      }
+      $n = $this->normalizeName((string) $it['name']);
+      if ($n === '') {
+        continue;
+      }
+      if (str_contains($n, $nTarget) || str_contains($nTarget, $n)) {
+        return ['id' => (string) $it['id'], 'name' => (string) $it['name'], 'reason' => 'normalized_contains'];
+      }
+    }
+
+    return [];
+  }
+
+  // --- UPDATED: same behavior first, better fallback + better logging ---
   protected function resolveGcSelections(FormStateInterface $form_state, string $memberId, array $grint_meta): void {
     $facilityName = trim((string) ($grint_meta['facility_name'] ?? ''));
     $courseName = trim((string) ($grint_meta['course_name'] ?? ''));
     $teeName = trim((string) ($grint_meta['tee_name'] ?? ''));
+
+    // Always log entry so we can confirm this function is running.
+    $this->logDebug('resolveGcSelections() START memberId="@mid" facility="@f" course="@c" tee="@t"', [
+      '@mid' => $memberId,
+      '@f' => $facilityName,
+      '@c' => $courseName,
+      '@t' => $teeName,
+    ]);
 
     $form_state->setValue('gc_facility_id', '');
     $form_state->setValue('gc_course_id', '');
     $form_state->setValue('gc_tee_id', '');
 
     if ($facilityName === '' || $memberId === '') {
+      $this->logDebug('resolveGcSelections() EARLY RETURN: facilityName empty?=@fe memberId empty?=@me', [
+        '@fe' => $facilityName === '' ? 'YES' : 'NO',
+        '@me' => $memberId === '' ? 'YES' : 'NO',
+      ]);
       return;
     }
+
+    // Small helper: normalize strings for fallback matching only.
+    $normalize = function (string $s): string {
+      $s = trim(mb_strtolower($s));
+      $s = str_replace('&', ' and ', $s);
+      $s = preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $s);
+      $s = preg_replace('/\s+/u', ' ', $s);
+      $s = trim($s);
+
+      $stop = ['the','golf','club','course','courses','country','cc','gc','and','of','at','links'];
+      $parts = $s === '' ? [] : explode(' ', $s);
+      $out = [];
+      foreach ($parts as $p) {
+        if ($p === '' || in_array($p, $stop, TRUE)) continue;
+        $out[] = $p;
+      }
+      return trim(implode(' ', $out));
+    };
+
+    // Helper: choose best id from list by name.
+    $bestByName = function (array $items, string $target) use ($normalize): array {
+      $target = trim($target);
+      if ($target === '') return [];
+      // exact
+      foreach ($items as $it) {
+        if (!isset($it['id'], $it['name'])) continue;
+        if (strcasecmp(trim((string) $it['name']), $target) === 0) {
+          return ['id' => (string) $it['id'], 'name' => (string) $it['name'], 'reason' => 'exact'];
+        }
+      }
+      $nt = $normalize($target);
+      if ($nt === '') return [];
+      // normalized exact
+      foreach ($items as $it) {
+        if (!isset($it['id'], $it['name'])) continue;
+        $n = $normalize((string) $it['name']);
+        if ($n !== '' && $n === $nt) {
+          return ['id' => (string) $it['id'], 'name' => (string) $it['name'], 'reason' => 'normalized_exact'];
+        }
+      }
+      // normalized contains
+      foreach ($items as $it) {
+        if (!isset($it['id'], $it['name'])) continue;
+        $n = $normalize((string) $it['name']);
+        if ($n === '') continue;
+        if (strpos($n, $nt) !== FALSE || strpos($nt, $n) !== FALSE) {
+          return ['id' => (string) $it['id'], 'name' => (string) $it['name'], 'reason' => 'normalized_contains'];
+        }
+      }
+      return [];
+    };
 
     try {
       /** @var \Drupal\gc_api\Service\GolfCanadaApiService $gc */
@@ -128,93 +321,173 @@ class GcUploadStartForm extends FormBase {
 
       $facilities = $gc->searchFacilities($facilityName, 10);
 
-      $this->logDebug('GC facility search "@q" returned count=@c', [
+      $this->logDebug('GC facility search q="@q" normalized="@nq" count=@c', [
         '@q' => $facilityName,
+        '@nq' => $normalize($facilityName),
         '@c' => is_array($facilities) ? count($facilities) : 0,
       ]);
 
-      $facilityId = '';
-
-      if (is_array($facilities)) {
-        foreach ($facilities as $f) {
-          if (!isset($f['id'], $f['name'])) {
-            continue;
-          }
-          if (strcasecmp(trim((string) $f['name']), $facilityName) === 0) {
-            $facilityId = (string) $f['id'];
-            break;
-          }
-        }
+      if (!is_array($facilities) || empty($facilities)) {
+        $this->logDebug('GC facility search returned EMPTY/non-array');
+        return;
       }
 
-      if ($facilityId === '' && is_array($facilities) && !empty($facilities[0]['id'])) {
-        $facilityId = (string) $facilities[0]['id'];
+      // Log top 8 candidates always.
+      $cand = [];
+      foreach (array_slice($facilities, 0, 8) as $f) {
+        if (!isset($f['id'], $f['name'])) continue;
+        $cand[] = (string) $f['id'] . ':' . (string) $f['name'] . ' (n="' . $normalize((string) $f['name']) . '")';
+      }
+      $this->logDebug('GC facility candidates (top8): @cand', ['@cand' => implode(' | ', $cand)]);
+
+      $facilityId = '';
+      $facilityPickedName = '';
+      $facilityReason = '';
+
+      // Exact first, then fallback.
+      $best = $bestByName($facilities, $facilityName);
+      if (!empty($best['id'])) {
+        $facilityId = (string) $best['id'];
+        $facilityPickedName = (string) ($best['name'] ?? '');
+        $facilityReason = (string) ($best['reason'] ?? '');
+      }
+      else {
+        // Absolute fallback: first
+        $facilityId = !empty($facilities[0]['id']) ? (string) $facilities[0]['id'] : '';
+        $facilityPickedName = (string) ($facilities[0]['name'] ?? '');
+        $facilityReason = 'first_result';
       }
 
       if ($facilityId === '') {
+        $this->logDebug('GC facility NOT resolved for "@fn"', ['@fn' => $facilityName]);
         return;
       }
 
       $form_state->setValue('gc_facility_id', $facilityId);
 
+      $this->logDebug('GC facility RESOLVED id=@id name="@nm" reason=@r', [
+        '@id' => $facilityId,
+        '@nm' => $facilityPickedName,
+        '@r' => $facilityReason,
+      ]);
+
       $courses = $gc->getCourses((int) $facilityId, (int) $memberId);
 
+      if (!is_array($courses) || empty($courses)) {
+        $this->logDebug('GC getCourses returned EMPTY/non-array for facility=@f member=@m', [
+          '@f' => $facilityId,
+          '@m' => $memberId,
+        ]);
+        return;
+      }
+
+      // Log course candidates.
+      $ccand = [];
+      foreach (array_slice($courses, 0, 8) as $c) {
+        if (!isset($c['id'], $c['name'])) continue;
+        $ccand[] = (string) $c['id'] . ':' . (string) $c['name'] . ' (n="' . $normalize((string) $c['name']) . '")';
+      }
+      $this->logDebug('GC course candidates (top8): @cand', ['@cand' => implode(' | ', $ccand)]);
+
       $courseId = '';
+      $coursePickedName = '';
+      $courseReason = '';
+
+      if ($courseName !== '') {
+        $bestCourse = $bestByName($courses, $courseName);
+        if (!empty($bestCourse['id'])) {
+          $courseId = (string) $bestCourse['id'];
+          $coursePickedName = (string) ($bestCourse['name'] ?? '');
+          $courseReason = (string) ($bestCourse['reason'] ?? '');
+        }
+      }
+
+      // If not found and only one course, pick it.
+      if ($courseId === '' && count($courses) === 1 && !empty($courses[0]['id'])) {
+        $courseId = (string) $courses[0]['id'];
+        $coursePickedName = (string) ($courses[0]['name'] ?? '');
+        $courseReason = 'single_course';
+      }
+
+      // Final fallback: first course.
+      if ($courseId === '' && !empty($courses[0]['id'])) {
+        $courseId = (string) $courses[0]['id'];
+        $coursePickedName = (string) ($courses[0]['name'] ?? '');
+        $courseReason = 'first_course';
+      }
+
       $teeId = '';
+      $teePickedName = '';
+      $teeReason = '';
 
-      if (is_array($courses)) {
-        foreach ($courses as $c) {
-          if (!isset($c['id'], $c['name'])) {
-            continue;
-          }
-          if ($courseName !== '' && strcasecmp(trim((string) $c['name']), $courseName) === 0) {
-            $courseId = (string) $c['id'];
+      // Resolve tees within selected course.
+      foreach ($courses as $c) {
+        if ((string) ($c['id'] ?? '') !== $courseId) continue;
 
-            if (!empty($c['tees']) && is_array($c['tees'])) {
-              foreach ($c['tees'] as $t) {
-                if (!isset($t['id'], $t['name'])) {
-                  continue;
-                }
-                if ($teeName !== '' && strcasecmp(trim((string) $t['name']), $teeName) === 0) {
-                  $teeId = (string) $t['id'];
-                  break;
-                }
-              }
-            }
-            break;
-          }
+        $tees = (!empty($c['tees']) && is_array($c['tees'])) ? $c['tees'] : [];
+
+        $tcand = [];
+        foreach (array_slice($tees, 0, 12) as $t) {
+          if (!isset($t['id'], $t['name'])) continue;
+          $tcand[] = (string) $t['id'] . ':' . (string) $t['name'] . ' (n="' . $normalize((string) $t['name']) . '")';
         }
+        $this->logDebug('GC tee candidates for course="@cn" (top12): @cand', [
+          '@cn' => (string) ($c['name'] ?? ''),
+          '@cand' => implode(' | ', $tcand),
+        ]);
 
-        if ($courseId === '' && !empty($courses[0]['id'])) {
-          $courseId = (string) $courses[0]['id'];
-        }
-
-        if ($courseId !== '' && $teeId === '') {
-          foreach ($courses as $c) {
-            if ((string) ($c['id'] ?? '') === $courseId && !empty($c['tees'][0]['id'])) {
-              $teeId = (string) $c['tees'][0]['id'];
-              break;
-            }
+        if ($teeName !== '' && !empty($tees)) {
+          $bestTee = $bestByName($tees, $teeName);
+          if (!empty($bestTee['id'])) {
+            $teeId = (string) $bestTee['id'];
+            $teePickedName = (string) ($bestTee['name'] ?? '');
+            $teeReason = (string) ($bestTee['reason'] ?? '');
           }
         }
+
+        // If still no tee and only one tee, pick it.
+        if ($teeId === '' && count($tees) === 1 && !empty($tees[0]['id'])) {
+          $teeId = (string) $tees[0]['id'];
+          $teePickedName = (string) ($tees[0]['name'] ?? '');
+          $teeReason = 'single_tee';
+        }
+
+        // Final fallback: first tee.
+        if ($teeId === '' && !empty($tees[0]['id'])) {
+          $teeId = (string) $tees[0]['id'];
+          $teePickedName = (string) ($tees[0]['name'] ?? '');
+          $teeReason = 'first_tee';
+        }
+
+        break;
       }
 
       $form_state->setValue('gc_course_id', $courseId);
       $form_state->setValue('gc_tee_id', $teeId);
 
-      $this->logDebug('GC resolved IDs facility=@f course=@c tee=@t from Grint meta facility="@fn" course="@cn" tee="@tn"', [
+      $this->logDebug('GC resolved IDs facility=@f course=@c tee=@t', [
         '@f' => $facilityId,
         '@c' => $courseId,
         '@t' => $teeId,
+      ]);
+
+      $this->logDebug('GC name match facility(grint)="@fn" => "@fcn" (@fr) | course(grint)="@cn" => "@ccn" (@cr) | tee(grint)="@tn" => "@tcn" (@tr)', [
         '@fn' => $facilityName,
+        '@fcn' => $facilityPickedName,
+        '@fr' => $facilityReason,
         '@cn' => $courseName,
+        '@ccn' => $coursePickedName,
+        '@cr' => $courseReason,
         '@tn' => $teeName,
+        '@tcn' => $teePickedName,
+        '@tr' => $teeReason,
       ]);
     }
     catch (\Throwable $e) {
       $this->logDebug('GC resolve error: @msg', ['@msg' => $e->getMessage()]);
     }
   }
+
 
   protected function applyPostFieldsStateChanges(array &$form, FormStateInterface $form_state): void {
     $mode = (string) $form_state->get('mode');
@@ -635,8 +908,6 @@ class GcUploadStartForm extends FormBase {
         '#attributes' => ['class' => ['gc-upload-round-pager']],
       ];
 
-
-
       $section['round_pager']['older'] = [
         '#type' => 'submit',
         '#value' => $this->t('Older rounds'),
@@ -759,7 +1030,10 @@ class GcUploadStartForm extends FormBase {
     $selected_round = (string) $form_state->getValue('selected_round');
     $gc_id = (string) $form_state->getValue('gc_id');
 
-    $this->logDebug('Load round clicked. selected_round=@rid', ['@rid' => $selected_round]);
+    $this->logDebug('Load round clicked. selected_round=@rid gc_id=@gc', [
+      '@rid' => $selected_round,
+      '@gc' => $gc_id,
+    ]);
 
     $form_state->setValue('loaded_round_id', (int) $selected_round);
 
@@ -776,9 +1050,15 @@ class GcUploadStartForm extends FormBase {
       '@t' => (string) ($meta['tee_name'] ?? ''),
     ]);
 
+    $this->logDebug('About to call resolveGcSelections() ...');
     $this->resolveGcSelections($form_state, $gc_id, $meta);
+    $this->logDebug('After resolveGcSelections(): gc_facility_id=@f gc_course_id=@c gc_tee_id=@t', [
+      '@f' => (string) ($form_state->getValue('gc_facility_id') ?? ''),
+      '@c' => (string) ($form_state->getValue('gc_course_id') ?? ''),
+      '@t' => (string) ($form_state->getValue('gc_tee_id') ?? ''),
+    ]);
 
-    // NEW: Set played_date from selected round date if available.
+    // Keep your existing played_date logic exactly.
     $round_date_map = (array) $form_state->get('round_date_map');
     $ymd = (string) ($round_date_map[$selected_round]['ymd'] ?? '');
     if ($ymd !== '') {
@@ -795,6 +1075,7 @@ class GcUploadStartForm extends FormBase {
     $form_state->setRebuild(TRUE);
   }
 
+
   public function backToRoundChooser(array &$form, FormStateInterface $form_state) {
     $this->logDebug('Back to chooser clicked.');
     $form_state->set('mode', 'choose');
@@ -808,20 +1089,15 @@ class GcUploadStartForm extends FormBase {
     $form_state->setRebuild(TRUE);
   }
 
-  /**
-   * Submit: build a JSON payload using the external builder service, then log it.
-   */
   public function postScoreSubmit(array &$form, FormStateInterface $form_state) {
     /** @var \Drupal\gc_upload\Service\GcUploadPostScorePayloadBuilder $builder */
     $builder = \Drupal::service('gc_upload.post_score_payload_builder');
     $payload = $builder->build($form_state);
 
-    // Post to GC.
     /** @var \Drupal\gc_api\Service\GolfCanadaApiService $gc */
     $gc = \Drupal::service('gc_api.golf_canada_api_service');
     $result = $gc->postScore($payload);
 
-    // Log everything (payload + result).
     $this->logDebug("GC Upload payload JSON:\n@json", [
       '@json' => json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
     ]);
@@ -842,9 +1118,7 @@ class GcUploadStartForm extends FormBase {
     $rounds = [];
 
     $dom = new DOMDocument();
-    libxml_use_internal_errors(true);
-    $dom->loadHTML($html);
-    libxml_clear_errors();
+    $this->loadHtmlAsUtf8($dom, (string) $html);
 
     $xpath = new DOMXPath($dom);
     $divNodes = $xpath->query("//div[contains(@class, 'newsfeed-container')][@number-post]");
@@ -855,8 +1129,7 @@ class GcUploadStartForm extends FormBase {
 
       $linkNode = $xpath->query(".//a[contains(@class, 'newsfeed-link-message')]", $divNode)->item(0);
       $href = $linkNode ? (string) $linkNode->getAttribute('href') : '';
-      $linkText = $linkNode ? (string) $linkNode->nodeValue : '';
-      $linkText = trim($linkText);
+      $linkText = $this->nodeText($linkNode);
 
       // Your existing behavior: remove leading "Score of " (first 9 chars).
       $linkTextRemoved = $linkText !== '' ? substr($linkText, 9) : '';
@@ -873,7 +1146,7 @@ class GcUploadStartForm extends FormBase {
       $effectiveId = $roundId !== '' ? $roundId : $numberPost;
 
       $dateNode = $xpath->query(".//span[contains(@class, 'newsfeed-date')]", $divNode)->item(0);
-      $dateText = $dateNode ? trim((string) $dateNode->nodeValue) : '';
+      $dateText = $this->nodeText($dateNode);
 
       if ((int) $effectiveId > 0) {
         $rounds[] = [
@@ -885,6 +1158,38 @@ class GcUploadStartForm extends FormBase {
     }
 
     return $rounds;
+  }
+
+  /**
+   * Force DOMDocument to treat incoming HTML as UTF-8 (prevents mojibake like ChÃ¢teau).
+   */
+  protected function loadHtmlAsUtf8(DOMDocument $dom, string $html): void {
+    // Ensure PHP string is valid UTF-8 first (best-effort).
+    $enc = mb_detect_encoding($html, ['UTF-8', 'Windows-1252', 'ISO-8859-1'], TRUE);
+    if ($enc && $enc !== 'UTF-8') {
+      $html = mb_convert_encoding($html, 'UTF-8', $enc);
+    }
+
+    // Convert to HTML entities so DOMDocument preserves accents reliably.
+    $html = mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8');
+
+    libxml_use_internal_errors(true);
+    // XML encoding hint makes DOMDocument stop guessing wrong.
+    $dom->loadHTML('<?xml encoding="UTF-8">' . $html);
+    libxml_clear_errors();
+  }
+
+  /**
+   * Extract plain text safely from a DOM node (trim + normalize whitespace).
+   */
+  protected function nodeText(?\DOMNode $node): string {
+    if (!$node) {
+      return '';
+    }
+    $text = trim((string) $node->textContent);
+    // Normalize weird spacing.
+    $text = preg_replace('/\s+/u', ' ', $text);
+    return trim((string) $text);
   }
 
   public function submitForm(array &$form, FormStateInterface $form_state) {
